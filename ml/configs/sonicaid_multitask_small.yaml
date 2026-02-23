@@ -1,0 +1,11 @@
+_base: "ml/configs/base.yaml"
+
+device: "cpu"
+
+training:
+  max_epochs: 5
+  patience: 2
+
+data:
+  batch_size: 8
+

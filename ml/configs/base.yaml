@@ -1,0 +1,47 @@
+seed: 1337
+device: "cpu"
+
+paths:
+  artifacts_dir: "ml/artifacts"
+  tensorboard_dir: "ml/runs"
+
+data:
+  sample_rate: 16000
+  n_mels: 80
+  window_seconds: 1.0
+  hop_seconds: 0.5
+  batch_size: 16
+  num_workers: 2
+
+model:
+  backbone:
+    n_mels: 80
+    d_model: 128
+  transformer:
+    d_model: 128
+    nhead: 4
+    num_layers: 2
+    dim_feedforward: 256
+    dropout: 0.1
+  heads:
+    num_primary_classes: 6
+    num_emotions: 4
+    num_env_tags: 8
+
+optim:
+  lr: 0.0005
+  weight_decay: 0.01
+
+training:
+  max_epochs: 10
+  patience: 3
+  grad_clip_norm: 1.0
+  log_every_steps: 20
+
+loss_weights:
+  primary: 1.0
+  emotion: 0.7
+  env_tags: 0.7
+  noise: 0.5
+  engagement: 0.5
+
