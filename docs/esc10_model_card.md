@@ -43,7 +43,9 @@ The **pooled** macro F1 of 0.8016 is computed across all 400 out-of-fold predict
 ## Reproducibility
 
 ```bash
-git clone --depth 1 https://github.com/karolpiczak/ESC-50.git data/ESC-50
+git init data/ESC-50
+git -C data/ESC-50 fetch --depth 1 https://github.com/karolpiczak/ESC-50.git 33c8ce9eb2cf0b1c2f8bcf322eb349b6be34dbb6
+git -C data/ESC-50 checkout --detach FETCH_HEAD
 python -m ml.real_audio.esc10 train --dataset data/ESC-50
 ```
 
