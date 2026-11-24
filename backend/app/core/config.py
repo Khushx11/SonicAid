@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Literal
 
 from pydantic import Field
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class AppSettings(BaseSettings):
@@ -15,6 +15,8 @@ class AppSettings(BaseSettings):
 
 
 class MlSettings(BaseSettings):
+    model_config = SettingsConfigDict(protected_namespaces=())
+
     model_path: Path = Path("ml/artifacts/sonicaid_multitask.pt")
     device: Literal["cpu", "cuda"] = "cpu"
 
@@ -40,8 +42,7 @@ class Settings(BaseSettings):
 
     env: Literal["dev", "prod"] = Field(default="dev", validation_alias="SONICAID_ENV")
 
-    class Config:
-        env_prefix = "SONICAID_"
+    model_config = SettingsConfigDict(env_prefix="SONICAID_")
 
 
 @lru_cache(maxsize=1)
