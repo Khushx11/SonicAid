@@ -25,12 +25,16 @@ class LogMelFeatureExtractor:
         Convert a waveform into a log-mel spectrogram.
 
         Args:
-            waveform: Tensor of shape (1, T) in float32, normalized to [-1, 1].
+            waveform: Mono tensor of shape (T,) or (1, T), normalized to [-1, 1].
 
         Returns:
             Tensor of shape (n_mels, time)
         """
+        if waveform.ndim == 1:
+            waveform = waveform.unsqueeze(0)
+        if waveform.ndim != 2 or waveform.shape[0] != 1:
+            raise ValueError("expected mono waveform with shape (T,) or (1, T)")
         spec = self.melspec(waveform)
         logmel = self.amplitude_to_db(spec)
-        return logmel
+        return logmel.squeeze(0)
 

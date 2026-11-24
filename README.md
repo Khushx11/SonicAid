@@ -1,6 +1,6 @@
 # SonicAid — Audio Intelligence for Sensory Therapy Research
 
-SonicAid is an experimental audio-processing platform exploring sound classification and session-level analysis for sensory-therapy research. The repository contains a FastAPI backend, a React frontend, a PyTorch multi-task model, and a synthetic-data training pipeline.
+SonicAid is an experimental audio-processing platform exploring sound classification and session-level analysis for sensory-therapy research. The repository contains a FastAPI backend, a React frontend, a PyTorch multi-task model scaffold, and a synthetic-data training pipeline. **The streaming API currently returns explicitly mocked predictions; it is not connected to a trained model.**
 
 > **Project status:** research prototype. The included training pipeline uses synthetic/mock audio data; it is not evidence of clinical validity, therapeutic effectiveness, or real-world recognition accuracy. Do not use this software for diagnosis or treatment decisions.
 
@@ -8,7 +8,7 @@ SonicAid is an experimental audio-processing platform exploring sound classifica
 
 | Component | Location | Purpose |
 | --- | --- | --- |
-| Streaming API | `backend/app/api/routes/stream.py` | Accepts 16 kHz mono PCM audio via WebSocket and returns structured prediction messages |
+| Streaming API | `backend/app/api/routes/stream.py` | Accepts 16 kHz mono PCM audio via WebSocket and returns **mock** prediction messages |
 | Model and inference | `ml/models/`, `backend/app/ml_inference/` | PyTorch architecture and feature extraction |
 | Training and evaluation | `ml/training/`, `ml/configs/` | Configurable synthetic-data training, validation, checkpoints, and metrics |
 | Session endpoints | `backend/app/api/routes/sessions.py` | Lists sessions and exports session data as CSV |
@@ -29,6 +29,8 @@ uvicorn backend.app.main:app --reload --port 8000
 ```
 
 Health endpoint: `http://localhost:8000/api/health`.
+
+HTTP requests and browser WebSockets permit only the default local development origins (`http://localhost:5173` and `http://127.0.0.1:5173`). To authorise a different frontend, set an explicit comma-separated allowlist such as `SONICAID_ALLOWED_ORIGINS=https://your-trusted-domain.example`. The server does not support wildcard origins.
 
 ### Frontend
 
@@ -55,7 +57,7 @@ Checkpoints, local sessions, and generated data are ignored by Git. Depending on
 
 ## Streaming interface
 
-The WebSocket endpoint `ws://localhost:8000/ws/stream` accepts binary 16 kHz mono PCM audio chunks. It generates predictions through the inference service and returns JSON messages when predictions are available. See `backend/app/api/routes/stream.py` for the current contract.
+The WebSocket endpoint `ws://localhost:8000/ws/stream` accepts binary 16 kHz mono PCM audio chunks. The inference service currently returns mock labels and synthetic confidence values, not measured acoustic predictions. See `backend/app/api/routes/stream.py` for the current contract.
 
 ## Testing
 
@@ -63,12 +65,13 @@ The WebSocket endpoint `ws://localhost:8000/ws/stream` accepts binary 16 kHz mon
 pytest backend/tests
 ```
 
-This command is provided as an entry point; no CI status or independently verified test pass rate is claimed here.
+The GitHub Actions workflow builds the React app and runs backend regression tests. Check the latest CI run for the actual status.
 
 ## Limitations and next steps
 
 - The current training dataset is synthetic. External validation on appropriately consented, representative datasets is required.
-- The current backend configuration is intended for local development; production deployment requires authentication, restrictive CORS settings, and data-protection review.
+- The current backend configuration is intended for local development. Browser origins are restricted, but **there is no user authentication or authorisation**. Do not deploy publicly with personal recordings or session exports.
+- Current audio streaming uses mock inference; integration of validated weights remains future work.
 - Streaming latency, classification performance, and calibration need benchmark results before reliability claims can be made.
 - Session recordings and exports may contain sensitive information and must not be committed.
 

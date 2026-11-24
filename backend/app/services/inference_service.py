@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+from uuid import uuid4
 from typing import Dict, List, Optional
 
 from loguru import logger
@@ -24,7 +25,7 @@ class InferenceService:
         logger.info("InferenceService initialized")
 
     def start_session(self) -> str:
-        session_id = f"session-{int(time.time() * 1000)}"
+        session_id = f"session-{uuid4().hex}"
         self._sessions[session_id] = {
             "created_at": time.time(),
             "buffer": bytearray(),
@@ -55,7 +56,18 @@ class InferenceService:
         start_time = time.time()
 
         session = self._sessions[session_id]
-        session["buffer"].extend(payload)
+        # Retain only the most recent inference window. The original
+        # implementation accumulated every audio chunk for the whole session.
+        # PCM16 mono audio requires 2 bytes per sample.
+        max_buffer_bytes = max(
+            2, int(settings.streaming.sample_rate * settings.streaming.window_seconds) * 2
+        )
+        if len(payload) >= max_buffer_bytes:
+            session["buffer"] = bytearray(payload[-max_buffer_bytes:])
+        else:
+            session["buffer"].extend(payload)
+            if len(session["buffer"]) > max_buffer_bytes:
+                del session["buffer"][:-max_buffer_bytes]
         session["last_index"] = metadata.sequence_index
 
         # TODO: replace with real windowing + model inference

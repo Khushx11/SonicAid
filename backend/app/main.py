@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .api.routes import health, stream, sessions, metrics
-from .core.config import settings
+from .core.config import settings, allowed_cors_origins
 from .core.logging import configure_logging
 
 
@@ -16,10 +16,10 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_origins=allowed_cors_origins(),
+        allow_credentials=False,
+        allow_methods=["GET", "POST"],
+        allow_headers=["Content-Type"],
     )
 
     app.include_router(health.router, prefix="/api")
@@ -31,4 +31,3 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
-
