@@ -32,11 +32,11 @@ export default function SessionTimeline({ history }: Props) {
           >
             <div style={{ fontWeight: 650 }}>{p.primary_class}</div>
             <div style={{ opacity: 0.85, fontSize: 12 }}>
-              emotion: {p.emotion}
+              emotion: {p.emotion ?? "not measured"}
             </div>
             <div style={{ opacity: 0.8, fontSize: 12 }}>
-              noise: {p.noise_intensity.toFixed(2)} · engage:{" "}
-              {p.engagement_score.toFixed(2)}
+              noise: {p.noise_intensity?.toFixed(2) ?? "—"} · engage:{" "}
+              {p.engagement_score?.toFixed(2) ?? "—"}
             </div>
             <div style={{ opacity: 0.75, fontSize: 12 }}>
               latency: {p.latency_ms.toFixed(1)}ms
