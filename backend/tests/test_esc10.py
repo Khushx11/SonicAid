@@ -2,9 +2,10 @@ from pathlib import Path
 
 import joblib
 import numpy as np
+import soundfile as sf
 import pytest
 
-from ml.real_audio.esc10 import FEATURES, RATE, SECONDS, ESC10Predictor, esc10_manifest, features, estimator
+from ml.real_audio.esc10 import FEATURES, RATE, SECONDS, ESC10Predictor, esc10_manifest, features, estimator, load_audio
 
 
 def test_real_audio_features_are_finite_and_have_fixed_shape():
@@ -52,3 +53,13 @@ def test_predictor_uses_saved_class_names(tmp_path):
     )
     assert label in {"rain", "clock_tick"}
     assert 0 <= confidence <= 1
+
+
+def test_portable_waveform_decoder_resamples_mono(tmp_path):
+    path = tmp_path / "synthetic.wav"
+    t = np.arange(44100) / 44100
+    sf.write(path, 0.2 * np.sin(2 * np.pi * 440 * t), 44100)
+    data = load_audio(path)
+    assert data.ndim == 1
+    assert data.shape[0] == 16000
+    assert np.isfinite(data).all()
