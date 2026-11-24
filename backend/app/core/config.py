@@ -24,6 +24,7 @@ class StreamingSettings(BaseSettings):
     window_seconds: float = 1.0
     hop_seconds: float = 0.5
     max_session_seconds: int = 3600
+    max_chunk_seconds: float = Field(default=2.0, gt=0, le=60)
 
 
 class PrivacySettings(BaseSettings):
