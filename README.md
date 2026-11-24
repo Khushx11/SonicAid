@@ -69,7 +69,9 @@ When the checkpoint is absent the app explicitly reports `model_unavailable`; it
 From the repository root, with Python dependencies installed:
 
 ```bash
-git clone --depth 1 https://github.com/karolpiczak/ESC-50.git data/ESC-50
+git init data/ESC-50
+git -C data/ESC-50 fetch --depth 1 https://github.com/karolpiczak/ESC-50.git 33c8ce9eb2cf0b1c2f8bcf322eb349b6be34dbb6
+git -C data/ESC-50 checkout --detach FETCH_HEAD
 python -m ml.real_audio.esc10 train --dataset data/ESC-50 \
   --model ml/artifacts/esc10.joblib --metrics ml/artifacts/esc10_metrics.json
 
@@ -107,7 +109,7 @@ The WebSocket endpoint `ws://localhost:8000/ws/stream` accepts binary 16 kHz mon
 pytest backend/tests
 ```
 
-The GitHub Actions workflow builds the React app and runs backend regression tests. Check the latest CI run for the actual status.
+The GitHub Actions workflow builds the React app, runs backend regression tests and verifies that the installer can download the published checkpoint and serve a prediction over WebSocket. The latter uses a synthetic tone to check the integration path. Check the latest CI run for the actual status.
 
 ## Limitations and next steps
 

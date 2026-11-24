@@ -36,3 +36,33 @@ jobs:
         run: python -m pip install -r requirements.txt
       - name: Run backend tests
         run: python -m pytest backend/tests -q
+      - name: Install and exercise the published ESC-10 checkpoint
+        env:
+          SONICAID_ESC10_MODEL: ${{ runner.temp }}/esc10.joblib
+        run: |
+          python -m scripts.install_esc10_model --output "$SONICAID_ESC10_MODEL"
+          python - <<'PY'
+          import numpy as np
+          from fastapi.testclient import TestClient
+
+          from backend.app.main import app
+
+          sample_rate = 16000
+          second = np.arange(sample_rate) / sample_rate
+          pcm = (4000 * np.sin(2 * np.pi * 440 * second)).astype("<i2").tobytes()
+          with TestClient(app) as client:
+              with client.websocket_connect("/ws/stream") as socket:
+                  assert socket.receive_json() == {
+                      "type": "status", "status": "ready", "model": "ESC-10"
+                  }
+                  for _ in range(5):
+                      socket.send_bytes(pcm)
+                  prediction = socket.receive_json()
+                  assert prediction["window_start"] == 0.0
+                  assert prediction["window_end"] == 5.0
+                  assert prediction["env_tags"] == ["esc10_environmental_sound"]
+                  assert prediction["primary_class"]
+                  assert 0.0 <= prediction["primary_confidence"] <= 1.0
+                  assert prediction["emotion"] is None
+                  assert prediction["engagement_score"] is None
+          PY
