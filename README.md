@@ -45,6 +45,23 @@ VITE_API_BASE=http://localhost:8000 npm run dev
 
 Open `http://localhost:5173`.
 
+### Verified real-audio result
+
+The first **successful official five-fold ESC-10 run** achieved **80.00% pooled out-of-fold accuracy** and **0.8016 pooled macro-F1** across 400 real recordings. Individual fold accuracies ranged from 71.25% to 87.50%. These are independently held-out fold measurements, **not clinical validation**.
+
+The trained model, observed fold report, and SHA-256 digest are attached to the [ESC-10 model release](https://github.com/Khushx11/SonicAid/releases/tag/esc10-baseline). See the [model card](docs/esc10_model_card.md) and the [successful training run](https://github.com/Khushx11/SonicAid/actions/runs/45381962916) for evaluation protocol, exact results and limitations.
+
+```bash
+# Install and verify the released 370 KB model artifact.
+python -m scripts.install_esc10_model
+
+# Start the checkpoint-backed WebSocket inference service.
+SONICAID_ESC10_MODEL=ml/artifacts/esc10.joblib \
+  uvicorn backend.app.main:app --reload --port 8000
+```
+
+When the checkpoint is absent the app explicitly reports `model_unavailable`; it never substitutes fabricated environmental sound predictions.
+
 ### Real labelled environmental audio (ESC-10)
 
 **Dataset:** Karol J. Piczak, *ESC: Dataset for Environmental Sound Classification* (2015), [official repository](https://github.com/karolpiczak/ESC-50). ESC-50 contains 2,000 five-second environmental audio clips; this implementation uses only the 400 clips in the **ESC-10 subset**, separately identified by the publisher as CC BY licensed. Keep the source WAV recordings in the locally ignored `data/` directory and follow the publisher's attribution requirements. No third-party recordings are committed here.
@@ -65,7 +82,7 @@ SONICAID_ESC10_MODEL=ml/artifacts/esc10.joblib \
   uvicorn backend.app.main:app --reload --port 8000
 ```
 
-The training code uses a fixed StandardScaler + RBF SVC baseline with 64-band log-mel mean/std, RMS and zero-crossing features. Each of the dataset's five predefined folds is held out once. The program writes observed fold accuracy, macro-F1 and a confusion matrix to `esc10_metrics.json`, then fits the final checkpoint on all 400 examples. It does not tune the estimator on held-out fold scores. A GitHub Actions workflow can also train the dataset and attach the checkpoint, its SHA-256 and measured metrics as build artifacts and a release.
+The training code uses a fixed StandardScaler + RBF SVC baseline with 64-band log-mel mean/std, RMS and zero-crossing features. Each of the dataset's five predefined folds is held out once. The program writes observed fold accuracy, macro-F1 and a confusion matrix to `esc10_metrics.json`, then fits the final checkpoint on all 400 examples. It does not tune the estimator on held-out fold scores. The GitHub Actions workflow has successfully trained the baseline and published the checkpoint, its SHA-256 and measured metrics as a release. Running the training script locally can independently reproduce these results subject to environment differences.
 
 **Model limitations:** SVC scores have not been externally calibrated; audio outside the ten trained categories is still classified into one of those classes. Training on fixed five-second clips does not guarantee robustness in a noisy room, on a different microphone or with overlapping sounds. No clinical, engagement or emotion claims follow from this dataset. Never load untrusted `.joblib` files, since joblib deserialization can execute arbitrary code.
 
