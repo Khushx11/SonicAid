@@ -30,6 +30,19 @@ jobs:
           --dataset data/ESC-50
           --model ml/artifacts/esc10.joblib
           --metrics ml/artifacts/esc10_metrics.json
+      - name: Smoke-test real checkpoint inference against held-out source audio
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from ml.real_audio.esc10 import ESC10Predictor, esc10_manifest, load_audio
+          root = Path('data/ESC-50')
+          source = esc10_manifest(root)[0]
+          predictor = ESC10Predictor(Path('ml/artifacts/esc10.joblib'))
+          label, confidence = predictor.predict(load_audio(root / 'audio' / source['filename']))
+          assert isinstance(label, str) and label
+          assert 0.0 <= confidence <= 1.0
+          print(f'Loaded saved model; real audio class={label}, confidence={confidence:.3f}')
+          PY
       - name: Hash generated checkpoint
         run: sha256sum ml/artifacts/esc10.joblib > ml/artifacts/esc10.sha256
       - uses: actions/upload-artifact@v4
