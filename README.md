@@ -1,6 +1,6 @@
-# SonicAid — Audio Intelligence for Sensory Therapy Research
+# SonicAid · Environmental sound classification
 
-SonicAid is an experimental audio-processing platform exploring sound classification and session-level analysis for sensory-therapy research. The repository contains a FastAPI backend, a React frontend, a PyTorch multi-task model scaffold, and a synthetic-data training pipeline. **The streaming API can now use a checkpoint trained on real ESC-10 environmental sounds. Without a trusted local checkpoint, it explicitly reports model unavailability rather than inventing predictions.**
+SonicAid classifies five-second environmental sound windows from a WebSocket audio stream. The FastAPI backend serves a checkpoint trained on ESC-10, and the React frontend displays predictions for local exploration. The repository also preserves an earlier synthetic-data scaffold for sensory-therapy research.
 
 > **Scope:** environmental sound classification research, not a diagnostic, clinical or therapy-evaluation system. ESC-10 contains no patient outcomes, engagement scores or emotion labels. A separate older multi-task training scaffold uses synthetic data and must not be confused with the ESC-10 results.
 
