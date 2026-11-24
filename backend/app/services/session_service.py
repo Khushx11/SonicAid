@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import json
+import re
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -18,6 +19,12 @@ class SessionEvent:
     prediction: PredictionMessage
 
 
+def _validate_session_id(session_id: str) -> None:
+    """Reject path separators or control characters in export identifiers."""
+    if not re.fullmatch(r"[A-Za-z0-9_-]{1,128}", session_id):
+        raise ValueError("invalid session identifier")
+
+
 class SessionService:
     """
     In-memory session store with optional disk persistence for reports.
@@ -29,9 +36,11 @@ class SessionService:
         self._storage_dir.mkdir(parents=True, exist_ok=True)
 
     def start(self, session_id: str) -> None:
+        _validate_session_id(session_id)
         self._sessions.setdefault(session_id, [])
 
     def append_prediction(self, p: PredictionMessage) -> None:
+        _validate_session_id(p.session_id)
         self._sessions.setdefault(p.session_id, []).append(
             SessionEvent(t_wall=time.time(), prediction=p)
         )
@@ -43,6 +52,7 @@ class SessionService:
         return self._sessions.get(session_id, [])
 
     def export_csv(self, session_id: str) -> Path:
+        _validate_session_id(session_id)
         events = self.get_session(session_id)
         out = self._storage_dir / f"{session_id}.csv"
 
@@ -82,6 +92,7 @@ class SessionService:
         return out
 
     def persist_jsonl(self, session_id: str) -> Optional[Path]:
+        _validate_session_id(session_id)
         events = self.get_session(session_id)
         if not events:
             return None
@@ -97,7 +108,7 @@ class SessionService:
                     )
                     + "\n"
                 )
-        logger.info("Persisted session %s (%d events) to %s", session_id, len(events), out)
+        logger.info("Persisted session {} ({} events) to {}", session_id, len(events), out)
         return out
 
 
