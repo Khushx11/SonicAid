@@ -1,3 +1,4 @@
+import os
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
@@ -49,3 +50,15 @@ def get_settings() -> Settings:
 
 settings = get_settings()
 
+
+
+DEFAULT_CORS_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173"
+
+
+def allowed_cors_origins() -> list[str]:
+    """Return trusted browser origins for HTTP and WebSocket requests."""
+    raw = os.environ.get("SONICAID_ALLOWED_ORIGINS", DEFAULT_CORS_ORIGINS)
+    origins = [origin.strip() for origin in raw.split(",") if origin.strip()]
+    if "*" in origins:
+        raise ValueError("Set explicit SONICAID_ALLOWED_ORIGINS rather than '*'")
+    return origins
