@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAudioCapture } from "../hooks/useAudioCapture";
 import { useWebSocketStream } from "../hooks/useWebSocketStream";
 
@@ -12,19 +12,22 @@ type Props = {
 export default function AudioCapture({ onLastPcm, stream }: Props) {
   const { connected, status, sendChunk, latestPrediction, history } = stream;
 
-  const lastPcmRef = useRef<Int16Array | null>(null);
   const [sentChunks, setSentChunks] = useState(0);
 
   const audio = useAudioCapture({
     sampleRate: 16000,
     onPcmChunk: (buf) => {
       const pcm = new Int16Array(buf);
-      lastPcmRef.current = pcm;
       onLastPcm(pcm);
       sendChunk(buf);
       setSentChunks((x) => x + 1);
     },
   });
+
+  const { stop } = audio;
+  useEffect(() => {
+    if (!connected || status !== "ready") stop();
+  }, [connected, status, stop]);
 
   return (
     <div className="card">
@@ -37,10 +40,10 @@ export default function AudioCapture({ onLastPcm, stream }: Props) {
         </div>
       </div>
       <div className="row" style={{ marginTop: 12 }}>
-        <button className="btn" onClick={audio.start} disabled={audio.running || status !== "ready"}>
-          Start
+        <button className="btn" onClick={audio.start} disabled={audio.running || audio.starting || !connected || status !== "ready"}>
+          {audio.starting ? "Waiting for microphone" : "Start"}
         </button>
-        <button className="btn" onClick={audio.stop} disabled={!audio.running}>
+        <button className="btn" onClick={audio.stop} disabled={!audio.running && !audio.starting}>
           Stop
         </button>
         <span className="pill">chunks sent: {sentChunks}</span>
@@ -59,6 +62,8 @@ export default function AudioCapture({ onLastPcm, stream }: Props) {
         ESC-10 environmental sound recognition uses real checkpoint-backed predictions after a
         five-second audio window. It does not measure emotion or therapy outcomes.
       </div>
+
+      {audio.error && <p role="alert">{audio.error}</p>}
 
       {status === "model_unavailable" ? (
         <div style={{ marginTop: 12, fontSize: 13 }}>
