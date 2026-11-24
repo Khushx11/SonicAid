@@ -40,3 +40,13 @@ def test_websocket_accepts_configured_browser_origin(monkeypatch):
     ) as ws:
         ws.send_bytes(b"\x00\x00" * 1024)
         assert ws.receive_json()["primary_class"] == "mock_speech"
+
+
+def test_websocket_rejects_oversized_audio_chunks():
+    client = TestClient(create_app())
+    with client.websocket_connect("/ws/stream") as ws:
+        # The default limit is 2 seconds of 16 kHz, 16-bit mono PCM.
+        ws.send_bytes(b"\x00\x00" * (16_000 * 3))
+        with pytest.raises(WebSocketDisconnect) as err:
+            ws.receive_json()
+        assert err.value.code == 1009
