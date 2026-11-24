@@ -22,6 +22,7 @@ import joblib
 import numpy as np
 import torch
 import torchaudio
+import soundfile as sf
 from sklearn.metrics import accuracy_score, confusion_matrix, f1_score
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
@@ -67,13 +68,17 @@ def features(samples: np.ndarray) -> np.ndarray:
 
 
 def load_audio(path: Path) -> np.ndarray:
-    waveform, sample_rate = torchaudio.load(str(path))
-    if waveform.ndim != 2 or sample_rate <= 0:
+    # The standard GitHub runner may not ship FFmpeg/SoX libraries required by
+    # torchaudio.load. SoundFile ships its own libsndfile on supported platforms.
+    waveform, sample_rate = sf.read(str(path), dtype="float32", always_2d=True)
+    if waveform.size == 0 or sample_rate <= 0:
         raise ValueError(f"bad audio file: {path}")
-    mono = waveform.mean(dim=0, keepdim=True)
+    mono = np.mean(waveform, axis=1, dtype=np.float32)
     if sample_rate != RATE:
-        mono = torchaudio.functional.resample(mono, sample_rate, RATE)
-    return mono.squeeze(0).numpy()
+        mono = torchaudio.functional.resample(
+            torch.from_numpy(mono), sample_rate, RATE
+        ).numpy()
+    return mono
 
 
 def esc10_manifest(root: Path) -> list[dict]:
