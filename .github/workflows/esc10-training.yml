@@ -30,16 +30,18 @@ jobs:
           --dataset data/ESC-50
           --model ml/artifacts/esc10.joblib
           --metrics ml/artifacts/esc10_metrics.json
-      - name: Smoke-test real checkpoint inference against held-out source audio
+      - name: Smoke-test saved checkpoint inference on an ESC-10 source clip
         run: |
           python - <<'PY'
           from pathlib import Path
           from ml.real_audio.esc10 import ESC10Predictor, esc10_manifest, load_audio
           root = Path('data/ESC-50')
-          source = esc10_manifest(root)[0]
+          # The final checkpoint was fitted on all 400 clips, including this one.
+          manifest = esc10_manifest(root)
+          source = manifest[0]
           predictor = ESC10Predictor(Path('ml/artifacts/esc10.joblib'))
           label, confidence = predictor.predict(load_audio(root / 'audio' / source['filename']))
-          assert isinstance(label, str) and label
+          assert label in {entry['category'] for entry in manifest}
           assert 0.0 <= confidence <= 1.0
           print(f'Loaded saved model; real audio class={label}, confidence={confidence:.3f}')
           PY
@@ -57,5 +59,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release view esc10-baseline >/dev/null 2>&1 || gh release create esc10-baseline --title 'ESC-10 environmental sound baseline' --notes 'Five official ESC-10 folds, evaluated and trained using this repository workflow. Non-clinical environmental sound recognition only. Dataset by Karol Piczak; ESC-10 is CC BY licensed. Review esc10_metrics.json for actual results and limitations.'
-          gh release upload esc10-baseline ml/artifacts/esc10.joblib ml/artifacts/esc10_metrics.json ml/artifacts/esc10.sha256 --clobber
+          if gh release view esc10-baseline >/dev/null 2>&1; then
+            echo "Baseline release already exists. This run's outputs are in the workflow artifact."
+          else
+            gh release create esc10-baseline \
+              ml/artifacts/esc10.joblib ml/artifacts/esc10_metrics.json ml/artifacts/esc10.sha256 \
+              --title 'ESC-10 environmental sound baseline' \
+              --notes 'Five official ESC-10 folds. Non-clinical environmental sound recognition only. Dataset by Karol Piczak; ESC-10 is CC BY licensed. Review esc10_metrics.json for results.'
+          fi

@@ -39,7 +39,7 @@ In a second terminal:
 
 ```bash
 cd frontend
-npm install
+npm ci
 VITE_API_BASE=http://localhost:8000 npm run dev
 ```
 
@@ -82,7 +82,7 @@ SONICAID_ESC10_MODEL=ml/artifacts/esc10.joblib \
   uvicorn backend.app.main:app --reload --port 8000
 ```
 
-The training code uses a fixed StandardScaler + RBF SVC baseline with 64-band log-mel mean/std, RMS and zero-crossing features. Each of the dataset's five predefined folds is held out once. The program writes observed fold accuracy, macro-F1 and a confusion matrix to `esc10_metrics.json`, then fits the final checkpoint on all 400 examples. It does not tune the estimator on held-out fold scores. The GitHub Actions workflow has successfully trained the baseline and published the checkpoint, its SHA-256 and measured metrics as a release. Running the training script locally can independently reproduce these results subject to environment differences.
+The training code uses a fixed StandardScaler + RBF SVC baseline with 64-band log-mel mean/std, RMS and zero-crossing features. Each of the dataset's five predefined folds is held out once. The program writes observed fold accuracy, macro-F1 and a confusion matrix to `esc10_metrics.json`, then fits the final checkpoint on all 400 examples. It does not tune the estimator on held-out fold scores. The original run published the baseline checkpoint, SHA-256 and measured metrics as a release. Subsequent training runs attach their outputs to the individual workflow run. The [checkpoint smoke test](https://github.com/Khushx11/SonicAid/actions/runs/45384429350) loads the final all-data checkpoint and predicts on one source recording from its training set. The five held-out folds are the evidence for classification accuracy. Running the training script locally repeats the protocol, with results subject to environment differences.
 
 **Model limitations:** SVC scores have not been externally calibrated; audio outside the ten trained categories is still classified into one of those classes. Training on fixed five-second clips does not guarantee robustness in a noisy room, on a different microphone or with overlapping sounds. No clinical, engagement or emotion claims follow from this dataset. Never load untrusted `.joblib` files, since joblib deserialization can execute arbitrary code.
 
