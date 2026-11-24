@@ -38,5 +38,5 @@ def test_websocket_accepts_configured_browser_origin(monkeypatch):
         "/ws/stream",
         headers={"origin": "http://localhost:5173"},
     ) as ws:
-        ws.send_bytes(b"\\x00\\x00" * 1024)
+        ws.send_bytes(b"\x00\x00" * 1024)
         assert ws.receive_json()["primary_class"] == "mock_speech"
