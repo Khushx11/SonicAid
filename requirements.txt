@@ -26,3 +26,6 @@ pytest-asyncio==0.24.0
 # Real ESC-10 sound classifier and checkpoint evaluation
 scikit-learn==1.4.2
 joblib==1.4.2
+
+# WAV decoding that does not rely on host FFmpeg/SoX availability
+soundfile==0.13.1
