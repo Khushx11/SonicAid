@@ -23,10 +23,10 @@ class PredictionMessage(BaseModel):
     window_end: float
     primary_class: str
     primary_confidence: float
-    emotion: str
-    env_tags: List[str]
-    noise_intensity: float
-    engagement_score: float
+    emotion: Optional[str] = None
+    env_tags: List[str] = Field(default_factory=list)
+    noise_intensity: Optional[float] = None
+    engagement_score: Optional[float] = None
     latency_ms: float
     attention_heatmap: Optional[List[List[float]]] = None
 

@@ -26,6 +26,16 @@ async def stream_audio(websocket: WebSocket) -> None:
 
     await websocket.accept()
     inference_service = get_inference_service()
+    if not inference_service.ready:
+        await websocket.send_json({
+            "type": "status",
+            "status": "model_unavailable",
+            "detail": "Install the ESC-10 checkpoint and set SONICAID_ESC10_MODEL.",
+        })
+        await websocket.close(code=1013)
+        return
+
+    await websocket.send_json({"type": "status", "status": "ready", "model": "ESC-10"})
     session_id = inference_service.start_session()
 
     sequence_index = 0
@@ -40,6 +50,9 @@ async def stream_audio(websocket: WebSocket) -> None:
             payload = await websocket.receive_bytes()
             if len(payload) > max_chunk_bytes:
                 await websocket.close(code=1009)
+                break
+            if not payload or len(payload) % 2:
+                await websocket.close(code=1003)
                 break
             metadata = AudioChunkMetadata(
                 session_id=session_id,

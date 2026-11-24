@@ -20,7 +20,8 @@ export default function App() {
   })();
 
   // Single source of truth for predictions (UI panels read from this).
-  const { latestPrediction, history } = useWebSocketStream(wsUrl);
+  const stream = useWebSocketStream(wsUrl);
+  const { latestPrediction, history } = stream;
 
   return (
     <div className="container">
@@ -28,7 +29,7 @@ export default function App() {
         <div>
           <div style={{ fontSize: 22, fontWeight: 800 }}>SonicAid Next-Gen</div>
           <div style={{ opacity: 0.8 }}>
-            Near real-time audio intelligence for ASD sensory therapy
+            Environmental sound classification research prototype
           </div>
         </div>
         <div className="row">
@@ -38,7 +39,7 @@ export default function App() {
 
       <div style={{ height: 14 }} />
 
-      <AudioCapture onLastPcm={setLastPcm} />
+      <AudioCapture onLastPcm={setLastPcm} stream={stream} />
 
       <div style={{ height: 14 }} />
 
@@ -59,11 +60,11 @@ export default function App() {
               </span>
               <span className="pill">
                 noise:{" "}
-                {latestPrediction ? latestPrediction.noise_intensity.toFixed(2) : "—"}
+                {latestPrediction?.noise_intensity != null ? latestPrediction.noise_intensity.toFixed(2) : "—"}
               </span>
               <span className="pill">
                 engagement:{" "}
-                {latestPrediction ? latestPrediction.engagement_score.toFixed(2) : "—"}
+                {latestPrediction?.engagement_score != null ? latestPrediction.engagement_score.toFixed(2) : "—"}
               </span>
             </div>
             <div style={{ height: 12 }} />

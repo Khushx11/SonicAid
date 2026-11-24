@@ -6,19 +6,21 @@ export type PredictionMessage = {
   window_end: number;
   primary_class: string;
   primary_confidence: number;
-  emotion: string;
+  emotion: string | null;
   env_tags: string[];
-  noise_intensity: number;
-  engagement_score: number;
+  noise_intensity: number | null;
+  engagement_score: number | null;
   latency_ms: number;
-  attention_heatmap?: number[][];
+  attention_heatmap?: number[][] | null;
 };
+
+export type StreamStatus = "connecting" | "ready" | "model_unavailable" | "disconnected";
 
 export function useWebSocketStream(url: string) {
   const wsRef = useRef<WebSocket | null>(null);
   const [connected, setConnected] = useState(false);
-  const [latestPrediction, setLatestPrediction] =
-    useState<PredictionMessage | null>(null);
+  const [status, setStatus] = useState<StreamStatus>("connecting");
+  const [latestPrediction, setLatestPrediction] = useState<PredictionMessage | null>(null);
   const [history, setHistory] = useState<PredictionMessage[]>([]);
 
   useEffect(() => {
@@ -26,20 +28,47 @@ export function useWebSocketStream(url: string) {
     ws.binaryType = "arraybuffer";
     ws.onopen = () => setConnected(true);
     ws.onmessage = (event) => {
-      const data = JSON.parse(event.data) as PredictionMessage;
-      setLatestPrediction(data);
-      setHistory((h) => [...h, data].slice(-500));
+      try {
+        const message: unknown = JSON.parse(event.data as string);
+        if (typeof message !== "object" || message === null) return;
+        if ("type" in message && message.type === "status") {
+          if ("status" in message && message.status === "ready") setStatus("ready");
+          if ("status" in message && message.status === "model_unavailable")
+            setStatus("model_unavailable");
+          return;
+        }
+        if ("primary_class" in message && "primary_confidence" in message) {
+          const prediction = message as PredictionMessage;
+          setLatestPrediction(prediction);
+          setHistory((previous) => [...previous, prediction].slice(-500));
+        }
+      } catch {
+        // Invalid server message: do not insert it into the prediction timeline.
+      }
     };
-    ws.onclose = () => setConnected(false);
-    ws.onerror = () => setConnected(false);
+    ws.onclose = () => {
+      setConnected(false);
+      setStatus((previous) =>
+        previous === "model_unavailable" ? previous : "disconnected"
+      );
+    };
+    ws.onerror = () => {
+      setConnected(false);
+      setStatus((previous) =>
+        previous === "model_unavailable" ? previous : "disconnected"
+      );
+    };
     wsRef.current = ws;
-    return () => ws.close();
+    return () => {
+      wsRef.current = null;
+      ws.close();
+    };
   }, [url]);
 
   function sendChunk(chunk: ArrayBuffer) {
-    wsRef.current?.send(chunk);
+    if (status === "ready" && wsRef.current?.readyState === WebSocket.OPEN)
+      wsRef.current.send(chunk);
   }
 
-  return { connected, sendChunk, latestPrediction, history };
+  return { connected, status, sendChunk, latestPrediction, history };
 }
-

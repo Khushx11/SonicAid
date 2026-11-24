@@ -23,7 +23,7 @@ class MlSettings(BaseSettings):
 
 class StreamingSettings(BaseSettings):
     sample_rate: int = 16000
-    window_seconds: float = 1.0
+    window_seconds: float = 5.0
     hop_seconds: float = 0.5
     max_session_seconds: int = 3600
     max_chunk_seconds: float = Field(default=2.0, gt=0, le=60)
