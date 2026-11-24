@@ -5,7 +5,7 @@ type Props = {
 };
 
 export default function ClassProbabilitiesChart({ latest }: Props) {
-  // Backend currently emits top-1 only; this UI is ready for future probability vectors.
+  // Only the winning class is emitted. SVC probabilities are not calibrated for clinical use.
   const items = latest
     ? [{ label: latest.primary_class, p: latest.primary_confidence }]
     : [];
@@ -13,7 +13,7 @@ export default function ClassProbabilitiesChart({ latest }: Props) {
   return (
     <div>
       <div className="row">
-        <span className="pill">Class probabilities</span>
+        <span className="pill">Top environmental sound estimate</span>
       </div>
       {items.length === 0 ? (
         <div style={{ opacity: 0.8 }}>Waiting for predictions…</div>
