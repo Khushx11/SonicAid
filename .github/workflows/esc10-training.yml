@@ -1,0 +1,48 @@
+name: Train and publish ESC-10 sound baseline
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ml/real_audio/**'
+      - '.github/workflows/esc10-training.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  esc10:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Install reproducible dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Retrieve official ESC-50 source
+        run: git clone --depth 1 https://github.com/karolpiczak/ESC-50.git data/ESC-50
+      - name: Train official five-fold ESC-10 baseline
+        run: >-
+          python -m ml.real_audio.esc10 train
+          --dataset data/ESC-50
+          --model ml/artifacts/esc10.joblib
+          --metrics ml/artifacts/esc10_metrics.json
+      - name: Hash generated checkpoint
+        run: sha256sum ml/artifacts/esc10.joblib > ml/artifacts/esc10.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: esc10-real-audio-baseline
+          path: |
+            ml/artifacts/esc10.joblib
+            ml/artifacts/esc10_metrics.json
+            ml/artifacts/esc10.sha256
+          retention-days: 90
+      - name: Publish reproducible baseline as a GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view esc10-baseline >/dev/null 2>&1 || gh release create esc10-baseline --title 'ESC-10 environmental sound baseline' --notes 'Five official ESC-10 folds, evaluated and trained using this repository workflow. Non-clinical environmental sound recognition only. Dataset by Karol Piczak; ESC-10 is CC BY licensed. Review esc10_metrics.json for actual results and limitations.'
+          gh release upload esc10-baseline ml/artifacts/esc10.joblib ml/artifacts/esc10_metrics.json ml/artifacts/esc10.sha256 --clobber
