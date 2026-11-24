@@ -1,23 +1,9 @@
-import os
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .api.routes import health, stream, sessions, metrics
-from .core.config import settings
+from .core.config import settings, allowed_cors_origins
 from .core.logging import configure_logging
-
-
-DEFAULT_CORS_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173"
-
-
-def allowed_cors_origins() -> list[str]:
-    """Allow explicit web origins; do not permit wildcard credential policies."""
-    raw = os.environ.get("SONICAID_ALLOWED_ORIGINS", DEFAULT_CORS_ORIGINS)
-    origins = [origin.strip() for origin in raw.split(",") if origin.strip()]
-    if "*" in origins:
-        raise ValueError("Set explicit SONICAID_ALLOWED_ORIGINS rather than '*'")
-    return origins
 
 
 def create_app() -> FastAPI:
