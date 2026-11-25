@@ -96,3 +96,16 @@ jobs:
           curl --silent --show-error --fail --retry 30 --retry-connrefused --retry-delay 1 http://127.0.0.1:8000/api/health
           curl --silent --show-error --fail --retry 30 --retry-connrefused --retry-delay 1 http://127.0.0.1:5173/ > /dev/null
           python frontend/tests/microphone_smoke.py
+
+  compose-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - name: Start a clean local stack and verify model readiness
+        run: |
+          docker compose config --quiet
+          trap 'docker compose logs; docker compose down -v' EXIT
+          docker compose up --build --wait --wait-timeout 300
+          curl --fail --silent --show-error http://127.0.0.1:8000/api/ready
+          curl --fail --silent --show-error --retry 20 --retry-connrefused http://127.0.0.1:5173/ -o /dev/null

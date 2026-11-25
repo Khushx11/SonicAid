@@ -1,13 +1,15 @@
-FROM pytorch/pytorch:2.3.0-cuda11.8-cudnn8-runtime
+FROM python:3.11-slim
 
 WORKDIR /app
 
 COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu torch==2.3.0 torchaudio==2.3.0 \
+    && pip install --no-cache-dir -r requirements.txt
 
 COPY backend ./backend
 COPY ml ./ml
 COPY configs ./configs
+COPY scripts ./scripts
 
 ENV PYTHONPATH=/app
 

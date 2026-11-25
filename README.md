@@ -155,7 +155,21 @@ python -m ml.training.eval --config ml/configs/sonicaid_multitask_small.yaml --c
 
 Checkpoints, local sessions, and generated data are ignored by Git. Depending on your machine, PyTorch audio dependencies may require platform-specific installation.
 
+## Run locally with Docker Compose
+
+With Docker Compose v2 running, use `docker compose up --build --wait` and open `http://localhost:5173`. On the first start the backend installs and verifies the published ESC-10 checkpoint into a named volume. The dashboard starts after `http://localhost:8000/api/ready` reports model readiness. Both published ports bind to loopback.
+
+WebSocket sessions close after 30 seconds without audio or one hour total. The backend holds up to 16 active sessions and the latest 16 nonempty completed sessions in memory, with up to 7,200 prediction events per session. Restarting clears that history. CSV downloads are generated in memory and saved by the browser. The normal streaming path writes neither raw audio nor session reports to disk. This is a single-user local setup. A shared installation requires authenticated, per-user session access.
+
 ## Expanded environmental-audio benchmarks
+
+| Dataset | Clips | Pooled accuracy | Pooled macro-F1 |
+| --- | ---: | ---: | ---: |
+| ESC-50 | 2,000 | 43.85% | 0.4339 |
+| UrbanSound8K | 8,732 | 59.06% | 0.6090 |
+
+These values come from the held-out evaluation logs. The downloadable metrics artifacts record per-fold exclusions, variability and confusion matrices. The datasets use distinct labels and recordings, so the two scores do not rank the datasets or predict performance in a new room. [Evaluation run and artifacts](https://github.com/Khushx11/SonicAid/actions/runs/45578746935)
+
 
 - **ESC-50** contains 2,000 five-second clips across 50 classes and five official folds. It includes the 400 ESC-10 clips, so it is a broader benchmark with overlapping recordings. The full dataset is CC BY-NC. [Dataset, attribution and known preprocessing caveats](https://github.com/karolpiczak/ESC-50)
 - **UrbanSound8K** contains 8,732 urban sound excerpts across ten classes and ten official folds. Extract the publisher's archive so the root contains `metadata/UrbanSound8K.csv` and `audio/fold1` through `audio/fold10`. Use it for non-commercial research under the publisher's conditions. [Dataset and download](https://urbansounddataset.weebly.com/urbansound8k.html) · [Archive](https://zenodo.org/records/1203745)
@@ -182,6 +196,8 @@ pytest backend/tests
 The GitHub Actions workflow builds the React app, runs backend regression tests and verifies that the installer can download the published checkpoint and serve a prediction over WebSocket. The WebSocket smoke test feeds a synthetic tone to the model. A separate Chromium check captures simulated microphone audio in the dashboard, verifies that the published checkpoint returns a result, and checks microphone cleanup and permission-denied feedback. These tests cover the browser-to-model integration. Physical microphone behaviour depends on the browser, permissions and device.
 
 ## Limitations and next steps
+
+The [real-room evaluation protocol](docs/room-evaluation.md) specifies separate tests for room noise, overlapping sounds, unfamiliar classes, latency and abstention. It is an experiment plan awaiting permission-cleared recordings.
 
 - The separate synthetic multi-task research scaffold is not clinically validated. The new ESC-10 pipeline uses real audio with environmental sound labels but lacks therapy-specific annotations.
 - The current backend configuration is intended for local development. Browser origins are restricted, but **there is no user authentication or authorisation**. Do not deploy publicly with personal recordings or session exports.

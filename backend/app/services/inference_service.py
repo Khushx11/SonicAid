@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 import time
+from functools import lru_cache
 from pathlib import Path
 from typing import Dict, List, Optional
 from uuid import uuid4
@@ -33,18 +34,18 @@ class InferenceService:
 
     def start_session(self) -> str:
         session_id = f"session-{uuid4().hex}"
+        self._session_service.start(session_id)
         self._sessions[session_id] = {
             "created_at": time.time(),
             "buffer": bytearray(),
             "total_samples": 0,
             "last_emitted_samples": 0,
         }
-        self._session_service.start(session_id)
         return session_id
 
     def end_session(self, session_id: str) -> None:
-        self._session_service.persist_jsonl(session_id)
         self._sessions.pop(session_id, None)
+        self._session_service.finish(session_id)
 
     async def process_chunk(
         self, session_id: str, metadata: AudioChunkMetadata, payload: bytes
@@ -97,6 +98,14 @@ class InferenceService:
         return [result]
 
 
+@lru_cache(maxsize=1)
+def load_predictor(path: Path, modified_ns: int, size: int):
+    # File metadata invalidates the cache when a trusted checkpoint changes.
+    from ml.real_audio.esc10 import ESC10Predictor
+
+    return ESC10Predictor(path)
+
+
 def get_inference_service() -> InferenceService:
     predictor = None
     model = os.environ.get("SONICAID_ESC10_MODEL")
@@ -105,8 +114,8 @@ def get_inference_service() -> InferenceService:
         if path.is_file():
             # joblib deserialization is unsafe on untrusted uploads.
             # Only set the environment variable to a locally trained checkpoint.
-            from ml.real_audio.esc10 import ESC10Predictor
-            predictor = ESC10Predictor(path)
+            metadata = path.stat()
+            predictor = load_predictor(path.resolve(), metadata.st_mtime_ns, metadata.st_size)
         else:
             logger.warning("ESC-10 checkpoint not found: {}", path)
     return InferenceService(session_service=get_session_service(), predictor=predictor)

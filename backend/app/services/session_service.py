@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import io
 import json
 import re
 import time
@@ -25,25 +26,54 @@ def _validate_session_id(session_id: str) -> None:
         raise ValueError("invalid session identifier")
 
 
+class SessionLimitError(RuntimeError):
+    pass
+
+
 class SessionService:
     """
     In-memory session store with optional disk persistence for reports.
     """
 
+    MAX_ACTIVE = 16
+    MAX_COMPLETED = 16
+    MAX_EVENTS = 7_200
+
     def __init__(self, storage_dir: Path = Path("storage/sessions")) -> None:
         self._sessions: Dict[str, List[SessionEvent]] = {}
+        self._active: set[str] = set()
+        self._completed: list[str] = []
         self._storage_dir = storage_dir
-        self._storage_dir.mkdir(parents=True, exist_ok=True)
 
     def start(self, session_id: str) -> None:
         _validate_session_id(session_id)
-        self._sessions.setdefault(session_id, [])
+        if session_id in self._sessions:
+            return
+        if len(self._active) >= self.MAX_ACTIVE:
+            raise SessionLimitError("Too many active audio sessions")
+        self._active.add(session_id)
+        self._sessions[session_id] = []
+
+    def finish(self, session_id: str) -> None:
+        if session_id not in self._active:
+            return
+        self._active.remove(session_id)
+        if not self._sessions[session_id]:
+            del self._sessions[session_id]
+            return
+        self._completed.append(session_id)
+        while len(self._completed) > self.MAX_COMPLETED:
+            del self._sessions[self._completed.pop(0)]
 
     def append_prediction(self, p: PredictionMessage) -> None:
         _validate_session_id(p.session_id)
-        self._sessions.setdefault(p.session_id, []).append(
-            SessionEvent(t_wall=time.time(), prediction=p)
-        )
+        if p.session_id not in self._active:
+            if p.session_id in self._sessions:
+                return
+            self.start(p.session_id)
+        events = self._sessions[p.session_id]
+        if len(events) < self.MAX_EVENTS:
+            events.append(SessionEvent(t_wall=time.time(), prediction=p))
 
     def list_sessions(self) -> List[str]:
         return sorted(self._sessions.keys())
@@ -51,44 +81,49 @@ class SessionService:
     def get_session(self, session_id: str) -> List[SessionEvent]:
         return self._sessions.get(session_id, [])
 
-    def export_csv(self, session_id: str) -> Path:
+    def csv_text(self, session_id: str) -> str:
         _validate_session_id(session_id)
         events = self.get_session(session_id)
-        out = self._storage_dir / f"{session_id}.csv"
-
-        with out.open("w", newline="") as f:
-            w = csv.writer(f)
+        stream = io.StringIO(newline="")
+        w = csv.writer(stream)
+        w.writerow(
+            [
+                "session_id",
+                "t_wall",
+                "window_start",
+                "window_end",
+                "primary_class",
+                "primary_confidence",
+                "emotion",
+                "noise_intensity",
+                "engagement_score",
+                "latency_ms",
+            ]
+        )
+        for e in events:
+            p = e.prediction
             w.writerow(
                 [
-                    "session_id",
-                    "t_wall",
-                    "window_start",
-                    "window_end",
-                    "primary_class",
-                    "primary_confidence",
-                    "emotion",
-                    "noise_intensity",
-                    "engagement_score",
-                    "latency_ms",
+                    p.session_id,
+                    e.t_wall,
+                    p.window_start,
+                    p.window_end,
+                    p.primary_class,
+                    p.primary_confidence,
+                    p.emotion,
+                    p.noise_intensity,
+                    p.engagement_score,
+                    p.latency_ms,
                 ]
             )
-            for e in events:
-                p = e.prediction
-                w.writerow(
-                    [
-                        p.session_id,
-                        e.t_wall,
-                        p.window_start,
-                        p.window_end,
-                        p.primary_class,
-                        p.primary_confidence,
-                        p.emotion,
-                        p.noise_intensity,
-                        p.engagement_score,
-                        p.latency_ms,
-                    ]
-                )
 
+        return stream.getvalue()
+
+    def export_csv(self, session_id: str) -> Path:
+        content = self.csv_text(session_id)
+        self._storage_dir.mkdir(parents=True, exist_ok=True)
+        out = self._storage_dir / f"{session_id}.csv"
+        out.write_text(content, encoding="utf-8", newline="")
         return out
 
     def persist_jsonl(self, session_id: str) -> Optional[Path]:
@@ -96,6 +131,7 @@ class SessionService:
         events = self.get_session(session_id)
         if not events:
             return None
+        self._storage_dir.mkdir(parents=True, exist_ok=True)
         out = self._storage_dir / f"{session_id}.jsonl"
         with out.open("w") as f:
             for e in events:

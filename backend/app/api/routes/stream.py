@@ -1,8 +1,12 @@
+import asyncio
+import time
+
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from ...core.config import allowed_cors_origins, settings
 from ...models.stream import AudioChunkMetadata
 from ...services.inference_service import get_inference_service
+from ...services.session_service import SessionLimitError
 
 
 router = APIRouter()
@@ -35,8 +39,12 @@ async def stream_audio(websocket: WebSocket) -> None:
         await websocket.close(code=1013)
         return
 
-    await websocket.send_json({"type": "status", "status": "ready", "model": "ESC-10"})
-    session_id = inference_service.start_session()
+    try:
+        session_id = inference_service.start_session()
+    except SessionLimitError:
+        await websocket.close(code=1013, reason="Too many active audio sessions")
+        return
+    deadline = time.monotonic() + settings.streaming.max_session_seconds
 
     sequence_index = 0
     max_chunk_bytes = int(
@@ -46,8 +54,17 @@ async def stream_audio(websocket: WebSocket) -> None:
     )
 
     try:
+        await websocket.send_json({"type": "status", "status": "ready", "model": "ESC-10"})
         while True:
-            payload = await websocket.receive_bytes()
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                await websocket.close(code=1008, reason="Audio session time limit reached")
+                break
+            try:
+                payload = await asyncio.wait_for(websocket.receive_bytes(), timeout=min(30, remaining))
+            except asyncio.TimeoutError:
+                await websocket.close(code=1008, reason="Audio session timed out")
+                break
             if len(payload) > max_chunk_bytes:
                 await websocket.close(code=1009)
                 break
