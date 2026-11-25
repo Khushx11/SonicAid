@@ -21,20 +21,18 @@ services:
       start_period: 3m
 
   frontend:
-    image: node:22-bookworm
-    working_dir: /app
+    build:
+      context: ./frontend
     ports:
       - "127.0.0.1:5173:5173"
-    environment:
-      VITE_API_BASE: http://localhost:8000
-    volumes:
-      - ./frontend:/app:ro
-      - frontend-dependencies:/app/node_modules
-    command: sh -ec "npm ci && npm run dev -- --host 0.0.0.0 --port 5173 --strictPort"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5173/').then(r => { if (!r.ok) process.exit(1) }).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 4s
+      retries: 6
     depends_on:
       backend:
         condition: service_healthy
 
 volumes:
   esc10-model:
-  frontend-dependencies:
