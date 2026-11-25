@@ -6,6 +6,22 @@ SonicAid classifies five-second environmental sound windows from a WebSocket aud
 
 > **Scope:** environmental sound classification research, not a diagnostic, clinical or therapy-evaluation system. ESC-10 contains no patient outcomes, engagement scores or emotion labels. A separate older multi-task training scaffold uses synthetic data and must not be confused with the ESC-10 results.
 
+
+## Audio processing
+
+```mermaid
+flowchart LR
+    A["Microphone or WAV"]
+    B["Five-second audio window"]
+    C["ESC-10 classifier"]
+    D["Live dashboard"]
+    A --> B --> C --> D
+```
+
+![ESC-10 fold accuracy](docs/readme-benchmark.svg)
+
+Official five-fold ESC-10 evaluation across 400 recordings. The pooled macro-F1 was 0.8016.
+
 ## Quick demo
 
 [**Watch the 80-second captioned demo**](https://raw.githubusercontent.com/Khushx11/SonicAid/main/docs/demo/walkthrough.mp4)
