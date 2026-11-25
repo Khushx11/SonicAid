@@ -10,7 +10,7 @@ type Props = {
 };
 
 export default function AudioCapture({ onLastPcm, stream }: Props) {
-  const { connected, status, sendChunk } = stream;
+  const { connected, status, sendChunk, restart } = stream;
 
   const [sentChunks, setSentChunks] = useState(0);
 
@@ -26,8 +26,18 @@ export default function AudioCapture({ onLastPcm, stream }: Props) {
 
   const { stop } = audio;
   useEffect(() => {
-    if (!connected || status !== "ready") stop();
-  }, [connected, status, stop]);
+    if (!connected || status !== "ready") {
+      stop();
+      onLastPcm(null);
+    }
+  }, [connected, status, stop, onLastPcm]);
+
+  function endCapture() {
+    stop();
+    onLastPcm(null);
+    setSentChunks(0);
+    restart();
+  }
 
   return (
     <div className="card">
@@ -43,9 +53,12 @@ export default function AudioCapture({ onLastPcm, stream }: Props) {
         <button className="btn" onClick={audio.start} disabled={audio.running || audio.starting || !connected || status !== "ready"}>
           {audio.starting ? "Waiting for microphone" : "Start"}
         </button>
-        <button className="btn" onClick={audio.stop} disabled={!audio.running && !audio.starting}>
+        <button className="btn" onClick={endCapture} disabled={!audio.running && !audio.starting}>
           Stop
         </button>
+        {(status === "disconnected" || status === "model_unavailable") && (
+          <button type="button" className="btn" onClick={restart}>Reconnect</button>
+        )}
         <span className="pill">{sentChunks} audio chunks</span>
       </div>
       <p className="muted">The classifier starts after five seconds of audio.</p>

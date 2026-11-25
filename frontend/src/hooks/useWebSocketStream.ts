@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export type PredictionMessage = {
   session_id: string;
@@ -18,6 +18,7 @@ export type StreamStatus = "connecting" | "ready" | "model_unavailable" | "disco
 
 export function useWebSocketStream(url: string) {
   const wsRef = useRef<WebSocket | null>(null);
+  const [connection, setConnection] = useState(0);
   const [connected, setConnected] = useState(false);
   const [status, setStatus] = useState<StreamStatus>("connecting");
   const [latestPrediction, setLatestPrediction] = useState<PredictionMessage | null>(null);
@@ -61,14 +62,22 @@ export function useWebSocketStream(url: string) {
     wsRef.current = ws;
     return () => {
       wsRef.current = null;
+      ws.onopen = ws.onmessage = ws.onerror = ws.onclose = null;
       ws.close();
     };
-  }, [url]);
+  }, [connection, url]);
 
   function sendChunk(chunk: ArrayBuffer) {
     if (status === "ready" && wsRef.current?.readyState === WebSocket.OPEN)
       wsRef.current.send(chunk);
   }
 
-  return { connected, status, sendChunk, latestPrediction, history };
+  const restart = useCallback(() => {
+    setConnected(false);
+    setStatus("connecting");
+    setLatestPrediction(null);
+    setConnection((previous) => previous + 1);
+  }, []);
+
+  return { connected, status, sendChunk, latestPrediction, history, restart };
 }
