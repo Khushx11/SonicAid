@@ -1,10 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title detail" width="720" height="204" viewBox="0 0 720 204">
-<title id="title">ESC-10 fold accuracy</title>
-<desc id="detail">Lowest fold 71.25%; Pooled out-of-fold 80%; Highest fold 87.5%. Scale begins at zero.</desc>
-<rect width="720" height="204" rx="12" fill="#eef4f8"/>
-<g font-family="system-ui, sans-serif" fill="#172c42"><text x="24" y="31" font-size="19" font-weight="700">ESC-10 fold accuracy</text>
-<text x="24" y="69" font-size="14">Lowest fold</text><rect x="209" y="54" width="394" height="20" rx="4" fill="#d5e2eb"/><rect x="209" y="54" width="280.73" height="20" rx="4" fill="#146c79"/><text x="619" y="69" font-size="14">71.25%</text>
-<text x="24" y="108" font-size="14">Pooled out-of-fold</text><rect x="209" y="93" width="394" height="20" rx="4" fill="#d5e2eb"/><rect x="209" y="93" width="315.20" height="20" rx="4" fill="#2f5687"/><text x="619" y="108" font-size="14">80%</text>
-<text x="24" y="147" font-size="14">Highest fold</text><rect x="209" y="132" width="394" height="20" rx="4" fill="#d5e2eb"/><rect x="209" y="132" width="344.75" height="20" rx="4" fill="#2f5687"/><text x="619" y="147" font-size="14">87.5%</text>
-<text x="209" y="189" font-size="12">0</text><text x="602" y="189" text-anchor="end" font-size="12">100%</text></g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="172" viewBox="0 0 680 172" role="img" aria-labelledby="title desc">
+<title id="title">ESC-10 five-fold accuracy interval</title><desc id="desc">Lowest fold 71.25%, highest 87.50%, and pooled out-of-fold accuracy across 400 clips 80.00%. This is the observed fold range.</desc>
+<rect width="680" height="172" rx="14" fill="#f8fafc"/>
+<g font-family="system-ui,sans-serif" fill="#182c40" font-size="14">
+<text x="30" y="34" font-size="22" font-weight="700">ESC-10 · fold accuracy range</text>
+<text x="30" y="57" fill="#42566c">Observed lowest and highest fold scores · 400 recordings</text>
+<line x1="94" y1="108" x2="580" y2="108" stroke="#bdcbd8" stroke-width="3"/>
+<line x1="122" y1="108" x2="519" y2="108" stroke="#2767a2" stroke-width="9" stroke-linecap="round"/>
+<circle cx="122" cy="108" r="7" fill="#2767a2"/><circle cx="519" cy="108" r="7" fill="#2767a2"/>
+<path d="M337 96l12 12-12 12-12-12z" fill="#8c355a"/>
+<text x="337" y="86" text-anchor="middle" font-weight="700">80.00% pooled</text>
+<text x="122" y="142" text-anchor="middle">71.25% lowest</text><text x="519" y="142" text-anchor="middle">87.50% highest</text>
+</g></svg>
