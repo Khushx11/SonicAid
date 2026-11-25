@@ -13,6 +13,8 @@ SonicAid classifies five-second environmental sound windows from a WebSocket aud
 
 Khush Maru (first author), Nevil Parekh, Hardik Patel, Vaishali Wadhe, and Moinuddin Sheikh.
 
+I co-authored this paper during my **Bachelor of Technology in Artificial Intelligence and Data Science** at **K J Somaiya Institute of Technology** in Mumbai. The institute is permanently affiliated with the **University of Mumbai**, which awards the degree. [Official programme syllabus](https://department.kjsieit.in/aids/documents/syllabus/AC%20Approved_Autonomy_%20Syllabus%20Scheme_II%20B_AY_23-24_Sem-III%20and%20IV%20of%20AI-DS.pdf) · [Institute affiliation](https://kjsit.somaiya.edu.in/en/introduction)
+
 The 2025 study used LibriSpeech and GTZAN as speech and music sources. It describes sub-band coding and acoustic features including MFCCs, spectral centroid and zero-crossing rate, with SVM and Gaussian mixture classifiers. The paper reports **94% overall accuracy** on its binary classification task.
 
 | Class | Reported precision | Reported recall |
@@ -21,6 +23,12 @@ The 2025 study used LibriSpeech and GTZAN as speech and music sources. It descri
 | Music | 95% | 94% |
 
 These are paper-reported classification results. The current repository's ESC-10 checkpoint has its own dataset, labels and evaluation protocol. The original paper discusses sensory accessibility as an application and identifies overlapping speech and music as a limitation.
+
+## How SonicAid evolved after publication
+
+- **A broader classification task.** The paper studied two labels, speech and music. The current app serves a ten-class environmental sound checkpoint trained on ESC-10. Official five-fold testing on 400 recordings yielded **80.00% pooled accuracy** and **0.8016 macro-F1**. These results describe a different task and test population. [Model card](docs/esc10_model_card.md)
+- **A live browser-to-model workflow.** A React dashboard streams microphone audio to FastAPI over WebSocket, where the model classifies five-second windows. The browser integration test checks prediction delivery, microphone cleanup and permission-denied feedback. [Live demo](#quick-demo) · [Tests](#testing)
+- **Repeatable model builds and broader evaluation.** The published checkpoint has a SHA-256 digest and an automated download-and-inference check. The repository also includes separate evaluation pipelines for ESC-50 and UrbanSound8K with source-overlap checks. The dashboard continues to use ESC-10. [Checkpoint release](https://github.com/Khushx11/SonicAid/releases/tag/esc10-baseline) · [Expanded benchmarks](#expanded-environmental-audio-benchmarks)
 
 ## Listen to the live stream
 
