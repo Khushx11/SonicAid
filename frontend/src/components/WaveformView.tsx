@@ -15,8 +15,8 @@ export default function WaveformView({ lastPcm16 }: Props) {
 
     const dpr = window.devicePixelRatio || 1;
     const rect = canvas.getBoundingClientRect();
-    const w = (canvas.width = rect.width * dpr);
-    const h = (canvas.height = 128 * dpr);
+    canvas.width = Math.max(1, Math.round(rect.width * dpr));
+    canvas.height = Math.round(128 * dpr);
     ctx.scale(dpr, dpr);
 
     const W = rect.width;
@@ -61,9 +61,9 @@ export default function WaveformView({ lastPcm16 }: Props) {
     ctx.lineJoin = "round";
     ctx.beginPath();
 
-    const step = Math.max(1, Math.floor(lastPcm16.length / W));
+    const step = lastPcm16.length / Math.ceil(W);
     for (let x = 0; x < W; x++) {
-      const i = x * step;
+      const i = Math.floor(x * step);
       const v = lastPcm16[i] / 32768;
       const y = H / 2 + v * (H * 0.42);
       if (x === 0) ctx.moveTo(x, y);
@@ -76,7 +76,7 @@ export default function WaveformView({ lastPcm16 }: Props) {
     ctx.fillStyle = grad;
     ctx.beginPath();
     for (let x = 0; x < W; x++) {
-      const i = x * step;
+      const i = Math.floor(x * step);
       const v = lastPcm16[i] / 32768;
       const y = H / 2 + v * (H * 0.42);
       if (x === 0) ctx.moveTo(x, y);

@@ -40,6 +40,7 @@ def test_microphone(frontend_url, mock_backend, physical_mic=False):
         page = browser.new_page(
             viewport={"width": 390, "height": 844},
             permissions=["microphone"],
+            device_scale_factor=2,
         )
         if mock_backend:
             page.route_web_socket("**/ws/stream", route_stream)
@@ -56,7 +57,7 @@ def test_microphone(frontend_url, mock_backend, physical_mic=False):
             return stream;
           };
         }""")
-        page.get_by_role("button", name="Start", exact=True).click()
+        page.get_by_role("button", name="Start microphone capture", exact=True).click()
         expect(page.get_by_text("Microphone on", exact=True)).to_be_visible()
         window = page.get_by_role("cell", name=re.compile(r"^\d+\.\d–\d+\.\d s$")).first
         expect(window).to_be_visible(timeout=20_000)
@@ -66,8 +67,16 @@ def test_microphone(frontend_url, mock_backend, physical_mic=False):
         if mock_backend:
             expect(page.get_by_role("cell", name="browser fixture")).to_be_visible()
             assert received_bytes >= 160_000
-        expect(page.get_by_role("button", name="Download CSV")).to_be_enabled()
-        page.get_by_role("button", name="Stop", exact=True).click()
+        export = page.get_by_role("button", name=re.compile(r"^Download session CSV"))
+        expect(export).to_be_enabled()
+        with page.expect_download() as download:
+            export.click()
+        assert download.value.path().read_text().startswith("session_id,window_start,window_end,")
+        assert page.evaluate("""() => {
+            const canvas = document.querySelector('[aria-label="Live audio spectrogram"]');
+            return canvas.getContext('2d').getImageData(canvas.width - 1, canvas.height - 1, 1, 1).data[3] === 255;
+        }""")
+        page.get_by_role("button", name="Stop microphone capture and reset session", exact=True).click()
         expect(page.get_by_text("Microphone off", exact=True)).to_be_visible()
         assert page.evaluate("window.smokeTrack.readyState") == "ended"
 
@@ -77,7 +86,7 @@ def test_microphone(frontend_url, mock_backend, physical_mic=False):
           };
         }""")
         expect(page.get_by_text("Model ready", exact=True)).to_be_visible(timeout=20_000)
-        page.get_by_role("button", name="Start", exact=True).click()
+        page.get_by_role("button", name="Start microphone capture", exact=True).click()
         expect(page.get_by_role("alert")).to_contain_text("Microphone permission was denied")
         browser.close()
 

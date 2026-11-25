@@ -707,3 +707,14 @@ tbody tr:hover { background: var(--bg-elevated); }
 
 /* ─── Focus ring ─────────────────────────────────────────────────── */
 a:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 2px; border-radius: 3px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .dot-pulse,
+  .prediction-animate {
+    animation: none;
+  }
+
+  .confidence-fill {
+    transition: none;
+  }
+}

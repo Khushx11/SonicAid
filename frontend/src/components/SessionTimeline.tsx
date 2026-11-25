@@ -16,7 +16,7 @@ export default function SessionTimeline({ history }: { history: PredictionMessag
           <tr>
             <th scope="col">Window</th>
             <th scope="col">Sound class</th>
-            <th scope="col">Confidence</th>
+            <th scope="col">Model score</th>
             <th scope="col">Latency</th>
           </tr>
         </thead>
@@ -39,7 +39,7 @@ export default function SessionTimeline({ history }: { history: PredictionMessag
                       className="mini-bar-fill"
                       style={{
                         width: `${pct * 100}%`,
-                        background: pct >= 0.7 ? "var(--accent-green)" : pct >= 0.4 ? "var(--accent-amber)" : "var(--accent-red)",
+                        background: "var(--accent-cyan)",
                       }}
                     />
                   </span>

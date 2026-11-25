@@ -47,10 +47,10 @@ function StatusBadge({ connected, status, running, starting }: { connected: bool
       )}
 
       {/* Microphone */}
-      {running && (
-        <span className="status-badge badge-cyan">
-          <span className="status-dot dot-pulse" aria-hidden="true" />
-          Mic live
+      {!starting && (
+        <span className={`status-badge ${running ? "badge-cyan" : "badge-neutral"}`}>
+          <span className={`status-dot ${running ? "dot-pulse" : ""}`} aria-hidden="true" />
+          {running ? "Microphone on" : "Microphone off"}
         </span>
       )}
       {starting && (
@@ -148,7 +148,7 @@ export default function AudioCapture({ onLastPcm, stream }: Props) {
         )}
 
         {sentChunks > 0 && (
-          <span className="chunk-counter" aria-live="polite">
+          <span className="chunk-counter">
             {sentChunks} chunk{sentChunks !== 1 ? "s" : ""} sent
           </span>
         )}

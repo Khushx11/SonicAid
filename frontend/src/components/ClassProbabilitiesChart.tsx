@@ -1,4 +1,3 @@
-import { useRef, useEffect } from "react";
 import type { PredictionMessage } from "../hooks/useWebSocketStream";
 
 type Props = {
@@ -19,26 +18,7 @@ const CLASS_EMOJI: Record<string, string> = {
   sea_waves: "🌊",
 };
 
-// Color coding by confidence level
-function confidenceColor(p: number): string {
-  if (p >= 0.7) return "var(--accent-green)";
-  if (p >= 0.4) return "var(--accent-amber)";
-  return "var(--accent-red)";
-}
-
-function confidenceLabel(p: number): string {
-  if (p >= 0.7) return "High confidence";
-  if (p >= 0.4) return "Moderate";
-  return "Low confidence";
-}
-
 export default function ClassProbabilitiesChart({ latest }: Props) {
-  const prevClass = useRef<string | null>(null);
-  const animKey = latest?.primary_class ?? "";
-
-  const isNewClass = latest && latest.primary_class !== prevClass.current;
-  if (latest) prevClass.current = latest.primary_class;
-
   if (!latest) {
     return (
       <div className="prediction-empty" aria-live="polite" aria-label="Waiting for first prediction">
@@ -61,16 +41,14 @@ export default function ClassProbabilitiesChart({ latest }: Props) {
   const pct = Math.max(0, Math.min(1, primary_confidence));
   const pctStr = (pct * 100).toFixed(1);
   const emoji = CLASS_EMOJI[primary_class] ?? "🔊";
-  const color = confidenceColor(pct);
-  const confLabel = confidenceLabel(pct);
 
   return (
     <div
-      className={isNewClass ? "prediction-animate" : ""}
-      key={animKey}
+      className="prediction-animate"
+      key={primary_class}
       style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
       aria-live="polite"
-      aria-label={`Detected: ${displayName} at ${pctStr}% confidence`}
+      aria-label={`Detected: ${displayName} with a model score of ${pctStr}%`}
     >
       {/* Emoji + class name */}
       <div style={{ display: "flex", alignItems: "flex-start", gap: "0.75rem" }}>
@@ -92,17 +70,17 @@ export default function ClassProbabilitiesChart({ latest }: Props) {
       {/* Confidence */}
       <div>
         <div className="prediction-confidence-row" style={{ marginBottom: "8px" }}>
-          <span className="prediction-confidence-label">{confLabel}</span>
-          <span className="prediction-confidence-value" style={{ color }}>
+          <span className="prediction-confidence-label">Model score</span>
+          <span className="prediction-confidence-value">
             {pctStr}%
           </span>
         </div>
-        <div className="confidence-track" role="progressbar" aria-valuenow={Math.round(pct * 100)} aria-valuemin={0} aria-valuemax={100} aria-label="Confidence">
+        <div className="confidence-track" role="progressbar" aria-valuenow={Math.round(pct * 100)} aria-valuemin={0} aria-valuemax={100} aria-label="Uncalibrated model score">
           <div
             className="confidence-fill"
             style={{
               width: `${pct * 100}%`,
-              background: `linear-gradient(90deg, ${color} 0%, ${color}cc 100%)`,
+              background: "var(--accent-cyan)",
             }}
           />
         </div>
@@ -111,7 +89,6 @@ export default function ClassProbabilitiesChart({ latest }: Props) {
       {/* Disclaimer */}
       <p className="prediction-disclaimer">
         Score is uncalibrated. Unfamiliar sounds may still receive a label.
-        Scores below 40% are likely unreliable.
       </p>
     </div>
   );

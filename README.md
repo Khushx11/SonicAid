@@ -66,7 +66,7 @@ The local dashboard uses the published ESC-10 checkpoint with a synthetic microp
 
 [![Dashboard preview](docs/demo/preview.png)](https://raw.githubusercontent.com/Khushx11/SonicAid/main/docs/demo/walkthrough.mp4)
 
-> **Frontend redesign (branch `frontend-redesign`):** The dashboard has been reworked with a polished dark design — full design-token system, coloured status badges with live pulse animation, emoji-labelled prediction card with colour-coded confidence bars, HiDPI-aware waveform and viridis-coloured spectrogram, accessible focus rings and a responsive mobile layout. All existing features, APIs and export formats are preserved.
+> The dashboard now includes live capture status, a waveform and spectrogram, the latest model score, and a session timeline with CSV export. The recording and preview above show an earlier dashboard layout.
 
 ## My contribution
 

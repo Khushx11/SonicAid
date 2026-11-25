@@ -41,11 +41,10 @@ export default function SpectrogramView({ lastPcm16 }: Props) {
 
     const dpr = window.devicePixelRatio || 1;
     const rect = canvas.getBoundingClientRect();
-    const W = rect.width;
-    const H = 128;
-    canvas.width = W * dpr;
-    canvas.height = H * dpr;
-    ctx.scale(dpr, dpr);
+    const W = Math.max(1, Math.round(rect.width * dpr));
+    const H = Math.round(128 * dpr);
+    canvas.width = W;
+    canvas.height = H;
 
     ctx.clearRect(0, 0, W, H);
     ctx.fillStyle = "rgba(8,13,19,0.9)";
@@ -55,7 +54,7 @@ export default function SpectrogramView({ lastPcm16 }: Props) {
       // Placeholder: show a grid hint
       ctx.strokeStyle = "rgba(255,255,255,0.04)";
       ctx.lineWidth = 1;
-      for (let y = 0; y < H; y += 32) {
+      for (let y = 0; y < H; y += 32 * dpr) {
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(W, y);
