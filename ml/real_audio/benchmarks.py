@@ -48,7 +48,6 @@ class Clip:
 
 def read_manifest(root: Path, spec: Dataset) -> list[Clip]:
     rows = []
-    source_folds = {}
     categories = {}
     with (root / spec.metadata).open(encoding="utf-8-sig", newline="") as stream:
         for row in csv.DictReader(stream):
@@ -59,8 +58,8 @@ def read_manifest(root: Path, spec: Dataset) -> list[Clip]:
             source = row[spec.source]
             if Path(filename).name != filename or Path(filename).suffix.lower() != ".wav":
                 raise ValueError(f"Invalid WAV filename: {filename}")
-            if not source or source_folds.setdefault(source, fold) != fold:
-                raise ValueError(f"Missing source ID or source crosses folds: {source}")
+            if not source:
+                raise ValueError(f"Missing source ID for {filename}")
             if not category or categories.setdefault(target, category) != category:
                 raise ValueError(f"Inconsistent category for class {target}")
             folder = root / "audio"
@@ -87,6 +86,7 @@ def evaluate(dataset: str, root: Path) -> dict:
     x = np.stack([features(load_audio(clip.path)) for clip in rows])
     y = np.array([clip.target for clip in rows])
     folds = np.array([clip.fold for clip in rows])
+    sources = np.array([clip.source for clip in rows])
     classes = sorted({clip.target: clip.category for clip in rows}.items())
     labels = [target for target, _ in classes]
     predicted = np.empty_like(y)
@@ -94,13 +94,17 @@ def evaluate(dataset: str, root: Path) -> dict:
 
     for fold in range(1, spec.folds + 1):
         test = folds == fold
+        shared_source = np.isin(sources, sources[test])
+        train = ~test & ~shared_source
         # Probability fitting is unnecessary for offline classification metrics.
         model = estimator().set_params(svc__probability=False)
-        model.fit(x[~test], y[~test])
+        model.fit(x[train], y[train])
         predicted[test] = model.predict(x[test])
         per_fold.append({
             "fold": fold,
             "test_samples": int(test.sum()),
+            "train_samples": int(train.sum()),
+            "excluded_shared_source_clips": int((~test & shared_source).sum()),
             "accuracy": accuracy_score(y[test], predicted[test]),
             "macro_f1": f1_score(y[test], predicted[test], labels=labels, average="macro", zero_division=0),
         })
