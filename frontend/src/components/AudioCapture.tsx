@@ -9,9 +9,62 @@ type Props = {
   stream: StreamClient;
 };
 
+function StatusBadge({ connected, status, running, starting }: { connected: boolean; status: string; running: boolean; starting: boolean }) {
+  const isActive = running && connected;
+
+  return (
+    <div className="status-bar" role="status" aria-live="polite" aria-label="Connection and capture status">
+      {/* WebSocket connection */}
+      <span className={`status-badge ${connected ? "badge-success" : "badge-error"}`}>
+        <span className={`status-dot ${isActive ? "dot-pulse" : ""}`} aria-hidden="true" />
+        {connected ? "Connected" : "Offline"}
+      </span>
+
+      {/* Model state */}
+      {status === "ready" && (
+        <span className="status-badge badge-cyan">
+          <span className="status-dot" aria-hidden="true" />
+          Model ready
+        </span>
+      )}
+      {status === "model_unavailable" && (
+        <span className="status-badge badge-warning">
+          <span className="status-dot" aria-hidden="true" />
+          No checkpoint
+        </span>
+      )}
+      {status === "connecting" && (
+        <span className="status-badge badge-neutral">
+          <span className="status-dot" aria-hidden="true" />
+          Connecting…
+        </span>
+      )}
+      {status === "disconnected" && (
+        <span className="status-badge badge-error">
+          <span className="status-dot" aria-hidden="true" />
+          Disconnected
+        </span>
+      )}
+
+      {/* Microphone */}
+      {running && (
+        <span className="status-badge badge-cyan">
+          <span className="status-dot dot-pulse" aria-hidden="true" />
+          Mic live
+        </span>
+      )}
+      {starting && (
+        <span className="status-badge badge-neutral">
+          <span className="status-dot" aria-hidden="true" />
+          Requesting mic…
+        </span>
+      )}
+    </div>
+  );
+}
+
 export default function AudioCapture({ onLastPcm, stream }: Props) {
   const { connected, status, sendChunk, restart } = stream;
-
   const [sentChunks, setSentChunks] = useState(0);
 
   const audio = useAudioCapture({
@@ -39,39 +92,90 @@ export default function AudioCapture({ onLastPcm, stream }: Props) {
     restart();
   }
 
+  const canStart = !audio.running && !audio.starting && connected && status === "ready";
+
   return (
-    <div className="card">
-      <div className="row" style={{ justifyContent: "space-between" }}>
-        <h2>Live capture</h2>
-        <div className="row">
-          <span className="pill">{connected ? "Connected" : "Offline"}</span>
-          <span className="pill">Model {status.replaceAll("_", " ")}</span>
-          <span className="pill">Microphone {audio.running ? "on" : "off"}</span>
-        </div>
+    <div className="capture-card">
+      <div className="capture-card-header">
+        <h2 className="capture-card-title">Live Capture</h2>
+        <StatusBadge
+          connected={connected}
+          status={status}
+          running={audio.running}
+          starting={audio.starting}
+        />
       </div>
-      <div className="row" style={{ marginTop: 12 }}>
-        <button className="btn" onClick={audio.start} disabled={audio.running || audio.starting || !connected || status !== "ready"}>
-          {audio.starting ? "Waiting for microphone" : "Start"}
+
+      <div className="capture-controls">
+        <button
+          className="btn btn-primary"
+          onClick={audio.start}
+          disabled={!canStart}
+          aria-label="Start microphone capture"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/>
+            <polygon points="10 8 16 12 10 16 10 8"/>
+          </svg>
+          {audio.starting ? "Requesting mic…" : "Start capture"}
         </button>
-        <button className="btn" onClick={endCapture} disabled={!audio.running && !audio.starting}>
+
+        <button
+          className="btn btn-secondary"
+          onClick={endCapture}
+          disabled={!audio.running && !audio.starting}
+          aria-label="Stop microphone capture and reset session"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+          </svg>
           Stop
         </button>
+
         {(status === "disconnected" || status === "model_unavailable") && (
-          <button type="button" className="btn" onClick={restart}>Reconnect</button>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={restart}
+            aria-label="Reconnect to backend"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <polyline points="1 4 1 10 7 10"/>
+              <path d="M3.51 15a9 9 0 1 0 .49-3.74"/>
+            </svg>
+            Reconnect
+          </button>
         )}
-        <span className="pill">{sentChunks} audio chunks</span>
+
+        {sentChunks > 0 && (
+          <span className="chunk-counter" aria-live="polite">
+            {sentChunks} chunk{sentChunks !== 1 ? "s" : ""} sent
+          </span>
+        )}
       </div>
-      <p className="muted">The classifier starts after five seconds of audio.</p>
 
-      {audio.error && <p role="alert">{audio.error}</p>}
+      <p className="capture-card-hint">
+        Classification begins after the first 5-second audio window is processed.
+      </p>
 
-      {status === "model_unavailable" ? (
-        <div style={{ marginTop: 12, fontSize: 13 }}>
-          No trained checkpoint is installed. Download the ESC-10 model artifact and set
-          SONICAID_ESC10_MODEL on the backend before starting audio capture.
+      {audio.error && (
+        <div className="alert-error" role="alert">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" style={{flexShrink:0,marginTop:1}}>
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="15" y1="9" x2="9" y2="15"/>
+            <line x1="9" y1="9" x2="15" y2="15"/>
+          </svg>
+          {audio.error}
         </div>
-      ) : null}
+      )}
+
+      {status === "model_unavailable" && (
+        <div className="model-unavailable" role="status">
+          <strong>No trained checkpoint installed.</strong> Download the ESC-10 model artifact
+          and set <code>SONICAID_ESC10_MODEL</code> on the backend before capturing audio.
+          Classification is disabled until a checkpoint is loaded.
+        </div>
+      )}
     </div>
   );
 }
-

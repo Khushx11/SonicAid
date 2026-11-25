@@ -6,7 +6,6 @@ type Props = {
 
 function stftMagnitude(x: Float32Array, fftSize: number, hop: number) {
   // Minimal, CPU-friendly spectrogram for UI only (not model features).
-  // Uses a naive DFT per bin for demo; replace with FFT library for scale.
   const frames = Math.max(0, Math.floor((x.length - fftSize) / hop) + 1);
   const bins = fftSize / 2;
   const out: number[][] = Array.from({ length: frames }, () =>
@@ -40,13 +39,31 @@ export default function SpectrogramView({ lastPcm16 }: Props) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const w = (canvas.width = 900);
-    const h = (canvas.height = 180);
-    ctx.clearRect(0, 0, w, h);
-    ctx.fillStyle = "rgba(0,0,0,0.25)";
-    ctx.fillRect(0, 0, w, h);
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    const W = rect.width;
+    const H = 128;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    ctx.scale(dpr, dpr);
 
-    if (!lastPcm16 || lastPcm16.length < 2048) return;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = "rgba(8,13,19,0.9)";
+    ctx.fillRect(0, 0, W, H);
+
+    if (!lastPcm16 || lastPcm16.length < 2048) {
+      // Placeholder: show a grid hint
+      ctx.strokeStyle = "rgba(255,255,255,0.04)";
+      ctx.lineWidth = 1;
+      for (let y = 0; y < H; y += 32) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(W, y);
+        ctx.stroke();
+      }
+      return;
+    }
+
     const x = new Float32Array(lastPcm16.length);
     for (let i = 0; i < lastPcm16.length; i++) x[i] = lastPcm16[i] / 32768;
 
@@ -58,34 +75,54 @@ export default function SpectrogramView({ lastPcm16 }: Props) {
     const frames = spec.length;
     const bins = spec[0].length;
     let max = 1e-9;
-    for (let t = 0; t < frames; t++) {
+    for (let t = 0; t < frames; t++)
       for (let b = 0; b < bins; b++) max = Math.max(max, spec[t][b]);
-    }
 
-    const img = ctx.createImageData(w, h);
-    for (let px = 0; px < w; px++) {
-      const t = Math.floor((px / w) * frames);
-      for (let py = 0; py < h; py++) {
-        const b = Math.floor(((h - 1 - py) / h) * bins);
-        const v = spec[t][b] / max;
-        const c = Math.floor(255 * Math.pow(v, 0.35));
-        const i = (py * w + px) * 4;
-        img.data[i + 0] = c;
-        img.data[i + 1] = Math.min(255, Math.floor(c * 0.8 + 30));
-        img.data[i + 2] = 255 - c;
-        img.data[i + 3] = 255;
+    const img = ctx.createImageData(W, H);
+    for (let px = 0; px < W; px++) {
+      const t = Math.min(frames - 1, Math.floor((px / W) * frames));
+      for (let py = 0; py < H; py++) {
+        const b = Math.min(bins - 1, Math.floor(((H - 1 - py) / H) * bins));
+        const v = Math.pow(spec[t][b] / max, 0.38);
+        const idx = (py * W + px) * 4;
+
+        // Viridis-inspired palette: dark blue → teal → yellow
+        if (v < 0.25) {
+          const t2 = v / 0.25;
+          img.data[idx]     = Math.round(68 * (1 - t2) + 59 * t2);
+          img.data[idx + 1] = Math.round(1  * (1 - t2) + 82 * t2);
+          img.data[idx + 2] = Math.round(84 * (1 - t2) + 139 * t2);
+        } else if (v < 0.5) {
+          const t2 = (v - 0.25) / 0.25;
+          img.data[idx]     = Math.round(59  * (1 - t2) + 33  * t2);
+          img.data[idx + 1] = Math.round(82  * (1 - t2) + 145 * t2);
+          img.data[idx + 2] = Math.round(139 * (1 - t2) + 140 * t2);
+        } else if (v < 0.75) {
+          const t2 = (v - 0.5) / 0.25;
+          img.data[idx]     = Math.round(33  * (1 - t2) + 94  * t2);
+          img.data[idx + 1] = Math.round(145 * (1 - t2) + 201 * t2);
+          img.data[idx + 2] = Math.round(140 * (1 - t2) + 97  * t2);
+        } else {
+          const t2 = (v - 0.75) / 0.25;
+          img.data[idx]     = Math.round(94  * (1 - t2) + 253 * t2);
+          img.data[idx + 1] = Math.round(201 * (1 - t2) + 231 * t2);
+          img.data[idx + 2] = Math.round(97  * (1 - t2) + 37  * t2);
+        }
+        img.data[idx + 3] = 255;
       }
     }
     ctx.putImageData(img, 0, 0);
   }, [lastPcm16]);
 
   return (
-    <div>
-      <div className="row">
-        <span className="pill">Spectrogram (live)</span>
-      </div>
-      <canvas ref={canvasRef} />
+    <div className="canvas-wrapper">
+      <span className="canvas-label" aria-hidden="true">Spectrogram</span>
+      <canvas
+        ref={canvasRef}
+        aria-label="Live audio spectrogram"
+        role="img"
+        style={{ height: "128px" }}
+      />
     </div>
   );
 }
-
