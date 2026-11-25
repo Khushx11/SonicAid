@@ -99,6 +99,20 @@ python -m ml.training.eval --config ml/configs/sonicaid_multitask_small.yaml --c
 
 Checkpoints, local sessions, and generated data are ignored by Git. Depending on your machine, PyTorch audio dependencies may require platform-specific installation.
 
+## Expanded environmental-audio benchmarks
+
+- **ESC-50** contains 2,000 five-second clips across 50 classes and five official folds. It includes the 400 ESC-10 clips, so it is a broader benchmark with overlapping recordings. The full dataset is CC BY-NC. [Dataset, attribution and known preprocessing caveats](https://github.com/karolpiczak/ESC-50)
+- **UrbanSound8K** contains 8,732 urban sound excerpts across ten classes and ten official folds. Extract the publisher's archive so the root contains `metadata/UrbanSound8K.csv` and `audio/fold1` through `audio/fold10`. Use it for non-commercial research under the publisher's conditions. [Dataset and download](https://urbansounddataset.weebly.com/urbansound8k.html) · [Archive](https://zenodo.org/records/1203745)
+
+Run the experiments independently. For ESC-50, use the pinned checkout above.
+
+```bash
+python -m ml.real_audio.benchmarks esc50 --root data/ESC-50 --metrics ml/artifacts/esc50.json
+python -m ml.real_audio.benchmarks urbansound8k --root data/UrbanSound8K --metrics ml/artifacts/urbansound8k.json
+```
+
+The evaluator keeps the original folds, checks that recordings from the same source stay together, and fits the scaler and RBF SVC on each fold's training partition. It uses the existing mono 16 kHz features and zero-pads clips shorter than five seconds. Reports include the metadata digest, per-fold scores, mean and standard deviation of fold accuracy, pooled scores and a confusion matrix. The [benchmark workflow](.github/workflows/audio-benchmarks.yml) uploads the JSON reports. Source audio stays out of Git. The WebSocket continues to serve the published ESC-10 checkpoint. These are separate research benchmarks with different class lists and evaluation populations.
+
 ## Streaming interface
 
 The WebSocket endpoint `ws://localhost:8000/ws/stream` accepts binary 16 kHz mono PCM audio chunks. With `SONICAID_ESC10_MODEL` configured to a valid locally trained checkpoint, the service uses actual ESC-10 sound-class predictions from five-second rolling PCM16 windows. Without weights it sends a `model_unavailable` status and does not produce predictions. The frontend displays that status. Emotion and engagement fields are null, rather than invented. See `backend/app/api/routes/stream.py` for the current contract.
