@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import re
 from urllib.request import urlopen
 
 from playwright.sync_api import expect, sync_playwright
@@ -53,10 +54,13 @@ def test_microphone(frontend_url, mock_backend):
         }""")
         page.get_by_role("button", name="Start", exact=True).click()
         expect(page.get_by_text("Microphone on", exact=True)).to_be_visible()
-        row = page.get_by_role("row").filter(has_text="0.0–5.0 s")
-        expect(row).to_be_visible(timeout=20_000)
+        window = page.get_by_role("cell", name=re.compile(r"^\d+\.\d–\d+\.\d s$")).first
+        expect(window).to_be_visible(timeout=20_000)
+        start, end = map(float, window.inner_text().removesuffix(" s").split("–"))
+        assert abs(end - start - 5) < 0.11
+
         if mock_backend:
-            expect(row).to_contain_text("browser fixture")
+            expect(page.get_by_role("cell", name="browser fixture")).to_be_visible()
             assert received_bytes >= 160_000
         expect(page.get_by_role("button", name="Download CSV")).to_be_enabled()
         page.get_by_role("button", name="Stop", exact=True).click()
@@ -68,6 +72,7 @@ def test_microphone(frontend_url, mock_backend):
             throw new DOMException("Permission denied", "NotAllowedError");
           };
         }""")
+        expect(page.get_by_text("Model ready", exact=True)).to_be_visible(timeout=20_000)
         page.get_by_role("button", name="Start", exact=True).click()
         expect(page.get_by_role("alert")).to_contain_text("Microphone permission was denied")
         browser.close()
