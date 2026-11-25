@@ -7,6 +7,21 @@ SonicAid classifies five-second environmental sound windows from a WebSocket aud
 > **Scope:** environmental sound classification research, not a diagnostic, clinical or therapy-evaluation system. ESC-10 contains no patient outcomes, engagement scores or emotion labels. A separate older multi-task training scaffold uses synthetic data and must not be confused with the ESC-10 results.
 
 
+## Original publication
+
+**Sonic Aid** · *IOSR Journal of Engineering*, vol. 15, issue 6, series 1, pp. 1–5, June 2025. [Read the paper](https://iosrjen.org/Papers/vol15_issue6/A15060105.pdf)
+
+Khush Maru (first author), Nevil Parekh, Hardik Patel, Vaishali Wadhe, and Moinuddin Sheikh.
+
+The 2025 study used LibriSpeech and GTZAN as speech and music sources. It describes sub-band coding and acoustic features including MFCCs, spectral centroid and zero-crossing rate, with SVM and Gaussian mixture classifiers. The paper reports **94% overall accuracy** on its binary classification task.
+
+| Class | Reported precision | Reported recall |
+| --- | ---: | ---: |
+| Speech | 92% | 93% |
+| Music | 95% | 94% |
+
+These are paper-reported classification results. The current repository's ESC-10 checkpoint has its own dataset, labels and evaluation protocol. The original paper discusses sensory accessibility as an application and identifies overlapping speech and music as a limitation.
+
 ## Listen to the live stream
 
 ```mermaid
