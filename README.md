@@ -4,6 +4,18 @@ SonicAid classifies five-second environmental sound windows from a WebSocket aud
 
 > **Scope:** environmental sound classification research, not a diagnostic, clinical or therapy-evaluation system. ESC-10 contains no patient outcomes, engagement scores or emotion labels. A separate older multi-task training scaffold uses synthetic data and must not be confused with the ESC-10 results.
 
+## Quick demo
+
+[**Watch the 80-second captioned demo**](https://raw.githubusercontent.com/Khushx11/SonicAid/main/docs/demo/walkthrough.mp4)
+
+The local dashboard uses the published ESC-10 checkpoint with a synthetic microphone source. The clip shows how an unfamiliar sound can still receive a known label.
+
+[![Dashboard preview](docs/demo/preview.png)](https://raw.githubusercontent.com/Khushx11/SonicAid/main/docs/demo/walkthrough.mp4)
+
+## My contribution
+
+SonicAid is my audio-intelligence portfolio project. It grew from a research prototype into an environmental sound monitor. The current implementation combines the ESC-10 benchmark and published checkpoint with a FastAPI WebSocket stream and React interface. The repository documents the five-fold evaluation and tests the browser-to-checkpoint path, microphone release and sample-rate conversion.
+
 ## Components
 
 | Component | Location | Purpose |
