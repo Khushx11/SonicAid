@@ -111,7 +111,7 @@ python -m ml.real_audio.benchmarks esc50 --root data/ESC-50 --metrics ml/artifac
 python -m ml.real_audio.benchmarks urbansound8k --root data/UrbanSound8K --metrics ml/artifacts/urbansound8k.json
 ```
 
-The evaluator keeps the original folds, checks that recordings from the same source stay together, and fits the scaler and RBF SVC on each fold's training partition. It uses the existing mono 16 kHz features and zero-pads clips shorter than five seconds. Reports include the metadata digest, per-fold scores, mean and standard deviation of fold accuracy, pooled scores and a confusion matrix. The [benchmark workflow](.github/workflows/audio-benchmarks.yml) uploads the JSON reports. Source audio stays out of Git. The WebSocket continues to serve the published ESC-10 checkpoint. These are separate research benchmarks with different class lists and evaluation populations.
+The evaluator keeps the official held-out folds and excludes any training clips whose source recording appears in that fold before fitting the scaler and RBF SVC. The report counts exclusions by fold. Where exclusions occur, results use a stricter training split than an unfiltered official-fold benchmark. It uses the existing mono 16 kHz features and zero-pads clips shorter than five seconds. Reports include the metadata digest, per-fold scores, mean and standard deviation of fold accuracy, pooled scores and a confusion matrix. The [benchmark workflow](.github/workflows/audio-benchmarks.yml) uploads the JSON reports. Source audio stays out of Git. The WebSocket continues to serve the published ESC-10 checkpoint. These are separate research benchmarks with different class lists and evaluation populations.
 
 ## Streaming interface
 
