@@ -10,7 +10,7 @@ type Props = {
 };
 
 export default function AudioCapture({ onLastPcm, stream }: Props) {
-  const { connected, status, sendChunk, latestPrediction, history } = stream;
+  const { connected, status, sendChunk } = stream;
 
   const [sentChunks, setSentChunks] = useState(0);
 
@@ -32,11 +32,11 @@ export default function AudioCapture({ onLastPcm, stream }: Props) {
   return (
     <div className="card">
       <div className="row" style={{ justifyContent: "space-between" }}>
-        <div style={{ fontWeight: 700, fontSize: 18 }}>Live streaming</div>
+        <h2>Live capture</h2>
         <div className="row">
-          <span className="pill">ws: {connected ? "connected" : "offline"}</span>
-          <span className="pill">model: {status}</span>
-          <span className="pill">mic: {audio.running ? "on" : "off"}</span>
+          <span className="pill">{connected ? "Connected" : "Offline"}</span>
+          <span className="pill">Model {status.replaceAll("_", " ")}</span>
+          <span className="pill">Microphone {audio.running ? "on" : "off"}</span>
         </div>
       </div>
       <div className="row" style={{ marginTop: 12 }}>
@@ -46,22 +46,9 @@ export default function AudioCapture({ onLastPcm, stream }: Props) {
         <button className="btn" onClick={audio.stop} disabled={!audio.running && !audio.starting}>
           Stop
         </button>
-        <span className="pill">chunks sent: {sentChunks}</span>
-        {latestPrediction ? (
-          <span className="pill">
-            {latestPrediction.primary_class} ·{" "}
-            {(latestPrediction.primary_confidence * 100).toFixed(1)}% ·{" "}
-            {latestPrediction.latency_ms.toFixed(1)}ms
-          </span>
-        ) : (
-          <span className="pill">waiting for prediction</span>
-        )}
+        <span className="pill">{sentChunks} audio chunks</span>
       </div>
-
-      <div style={{ marginTop: 12, opacity: 0.85, fontSize: 12 }}>
-        ESC-10 environmental sound recognition uses real checkpoint-backed predictions after a
-        five-second audio window. It does not measure emotion or therapy outcomes.
-      </div>
+      <p className="muted">The classifier starts after five seconds of audio.</p>
 
       {audio.error && <p role="alert">{audio.error}</p>}
 
@@ -71,9 +58,6 @@ export default function AudioCapture({ onLastPcm, stream }: Props) {
           SONICAID_ESC10_MODEL on the backend before starting audio capture.
         </div>
       ) : null}
-      <div style={{ marginTop: 12, opacity: 0.85, fontSize: 12 }}>
-        history size: {history.length}
-      </div>
     </div>
   );
 }

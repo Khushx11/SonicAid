@@ -4,85 +4,52 @@ import WaveformView from "./components/WaveformView";
 import SpectrogramView from "./components/SpectrogramView";
 import ClassProbabilitiesChart from "./components/ClassProbabilitiesChart";
 import SessionTimeline from "./components/SessionTimeline";
-import AttentionHeatmap from "./components/AttentionHeatmap";
 import SessionReportDownload from "./components/SessionReportDownload";
 import { API_BASE } from "./api/client";
 import { useWebSocketStream } from "./hooks/useWebSocketStream";
 
+const streamUrl = new URL("/ws/stream", API_BASE);
+streamUrl.protocol = streamUrl.protocol === "https:" ? "wss:" : "ws:";
+
 export default function App() {
   const [lastPcm, setLastPcm] = useState<Int16Array | null>(null);
-
-  const wsUrl = (() => {
-    const u = new URL(API_BASE);
-    u.protocol = u.protocol === "https:" ? "wss:" : "ws:";
-    u.pathname = "/ws/stream";
-    return u.toString();
-  })();
-
-  // Single source of truth for predictions (UI panels read from this).
-  const stream = useWebSocketStream(wsUrl);
-  const { latestPrediction, history } = stream;
+  const stream = useWebSocketStream(streamUrl.toString());
 
   return (
-    <div className="container">
-      <div className="row" style={{ justifyContent: "space-between" }}>
+    <main className="container">
+      <header className="page-header">
         <div>
-          <div style={{ fontSize: 22, fontWeight: 800 }}>SonicAid Next-Gen</div>
-          <div style={{ opacity: 0.8 }}>
-            Environmental sound classification research prototype
-          </div>
+          <p className="brand">SonicAid</p>
+          <h1>Environmental sound monitor</h1>
+          <p>Classify live microphone audio into ten ESC-10 sound categories.</p>
         </div>
-        <div className="row">
-          <span className="pill">API: {API_BASE}</span>
-        </div>
-      </div>
-
-      <div style={{ height: 14 }} />
+        <a href="https://github.com/Khushx11/SonicAid/blob/main/docs/esc10_model_card.md">
+          Model card ↗
+        </a>
+      </header>
 
       <AudioCapture onLastPcm={setLastPcm} stream={stream} />
 
-      <div style={{ height: 14 }} />
-
       <div className="grid">
-        <div className="card">
+        <section className="card signal" aria-label="Microphone signal">
+          <h2>Microphone signal</h2>
           <WaveformView lastPcm16={lastPcm} />
-          <div style={{ height: 12 }} />
           <SpectrogramView lastPcm16={lastPcm} />
-        </div>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div className="card">
-            <ClassProbabilitiesChart latest={latestPrediction} />
-            <div style={{ height: 12 }} />
-            <div className="row">
-              <span className="pill">
-                emotion: {latestPrediction?.emotion ?? "—"}
-              </span>
-              <span className="pill">
-                noise:{" "}
-                {latestPrediction?.noise_intensity != null ? latestPrediction.noise_intensity.toFixed(2) : "—"}
-              </span>
-              <span className="pill">
-                engagement:{" "}
-                {latestPrediction?.engagement_score != null ? latestPrediction.engagement_score.toFixed(2) : "—"}
-              </span>
-            </div>
-            <div style={{ height: 12 }} />
-            <SessionReportDownload history={history} />
-          </div>
-
-          <div className="card">
-            <AttentionHeatmap latest={latestPrediction} />
-          </div>
-        </div>
+        </section>
+        <section className="card" aria-label="Latest classification">
+          <h2>Latest classification</h2>
+          <ClassProbabilitiesChart latest={stream.latestPrediction} />
+          <p className="muted">The score is uncalibrated. Unfamiliar sounds can still receive a label.</p>
+        </section>
       </div>
 
-      <div style={{ height: 14 }} />
-
-      <div className="card">
-        <SessionTimeline history={history} />
-      </div>
-    </div>
+      <section className="card" aria-label="Session timeline">
+        <div className="section-header">
+          <h2>Session timeline</h2>
+          <SessionReportDownload history={stream.history} />
+        </div>
+        <SessionTimeline history={stream.history} />
+      </section>
+    </main>
   );
 }
-

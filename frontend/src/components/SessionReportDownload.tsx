@@ -44,7 +44,6 @@ export default function SessionReportDownload({ history }: Props) {
 
   return (
     <div className="row" style={{ justifyContent: "space-between" }}>
-      <div className="pill">Report</div>
       <button className="btn" onClick={onDownload} disabled={history.length === 0}>
         Download CSV
       </button>
