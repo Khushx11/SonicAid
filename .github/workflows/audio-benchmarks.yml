@@ -18,7 +18,7 @@ permissions:
 jobs:
   evaluate:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 65
     strategy:
       fail-fast: false
       matrix:
@@ -41,11 +41,14 @@ jobs:
         if: matrix.dataset == 'urbansound8k'
         run: |
           mkdir -p data
-          curl --fail --location --retry 2 --retry-max-time 1200 --max-time 600 \
-            'https://zenodo.org/records/1203745/files/UrbanSound8K.tar.gz?download=1' \
-            --output data/UrbanSound8K.tar.gz
+          archive=data/UrbanSound8K.tar.gz
+          url='https://zenodo.org/records/1203745/files/UrbanSound8K.tar.gz?download=1'
+          if ! curl --fail --location --max-time 2400 --output "$archive" "$url"; then
+            curl --fail --location --continue-at - --max-time 900 --output "$archive" "$url"
+          fi
           echo '9aa69802bbf37fb986f71ec1483a196e  data/UrbanSound8K.tar.gz' | md5sum --check
           tar -xzf data/UrbanSound8K.tar.gz -C data
+          rm data/UrbanSound8K.tar.gz
           echo 'AUDIO_ROOT=data/UrbanSound8K' >> "$GITHUB_ENV"
       - name: Evaluate official held-out folds
         env:
