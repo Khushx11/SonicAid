@@ -210,3 +210,7 @@ See the research design document in `plan/` for the proposed architecture and fu
 ## Repository purpose
 
 This repository documents the software architecture and implementation progress of an exploratory audio-intelligence system. It should be evaluated as an engineering prototype, not as a released clinical product.
+
+## Licence
+
+The SonicAid source code and its associated documentation are available under the [MIT License](LICENSE). External datasets, third-party dependencies, publications and separately distributed model checkpoints are governed by their respective terms. See the [model card](docs/esc10_model_card.md) for the checkpoint's provenance and intended use.
