@@ -112,6 +112,8 @@ def evaluate(dataset: str, root: Path) -> dict:
         "class_order": [category for _, category in classes],
         "model": "StandardScaler + RBF SVC (C=5)",
         "folds": per_fold,
+        "mean_fold_accuracy": float(np.mean([row["accuracy"] for row in per_fold])),
+        "fold_accuracy_std": float(np.std([row["accuracy"] for row in per_fold])),
         "out_of_fold_accuracy": accuracy_score(y, predicted),
         "out_of_fold_macro_f1": f1_score(y, predicted, labels=labels, average="macro", zero_division=0),
         "confusion_matrix": confusion_matrix(y, predicted, labels=labels).tolist(),
