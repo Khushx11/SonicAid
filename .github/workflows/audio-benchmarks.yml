@@ -5,6 +5,11 @@ on:
     paths:
       - 'ml/real_audio/**'
       - '.github/workflows/audio-benchmarks.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'ml/real_audio/benchmarks.py'
+      - '.github/workflows/audio-benchmarks.yml'
   workflow_dispatch:
 
 permissions:
@@ -17,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        dataset: [esc50, urbansound8k]
+        dataset: ${{ fromJSON(github.event_name == 'workflow_dispatch' && '["esc50","urbansound8k"]' || '["esc50"]') }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -36,7 +41,7 @@ jobs:
         if: matrix.dataset == 'urbansound8k'
         run: |
           mkdir -p data
-          curl --fail --location --retry 3 --max-time 600 \
+          curl --fail --location --retry 2 --retry-max-time 1200 --max-time 600 \
             'https://zenodo.org/records/1203745/files/UrbanSound8K.tar.gz?download=1' \
             --output data/UrbanSound8K.tar.gz
           echo '9aa69802bbf37fb986f71ec1483a196e  data/UrbanSound8K.tar.gz' | md5sum --check
