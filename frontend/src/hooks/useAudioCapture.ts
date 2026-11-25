@@ -8,16 +8,30 @@ type AudioCaptureOpts = {
 type Capture = {
   stream?: MediaStream;
   context?: AudioContext;
-  processor?: ScriptProcessorNode;
+  processor?: AudioWorkletNode;
 };
 
 function release(capture: Capture) {
   if (capture.processor) {
-    capture.processor.onaudioprocess = null;
+    capture.processor.port.onmessage = null;
+    capture.processor.port.close();
     capture.processor.disconnect();
   }
   capture.stream?.getTracks().forEach((track) => track.stop());
   void capture.context?.close().catch(() => {});
+}
+
+function captureError(cause: unknown) {
+  if (cause instanceof DOMException) {
+    const messages: Record<string, string> = {
+      NotAllowedError: "Microphone permission was denied. Allow access in your browser and try again.",
+      NotFoundError: "No microphone was found. Connect or enable an input device and try again.",
+      NotReadableError: "The microphone could not be opened. Check that it is available and permitted.",
+      NotSupportedError: "This browser session could not start microphone capture. Check your input device or try a supported browser.",
+    };
+    if (messages[cause.name]) return messages[cause.name];
+  }
+  return cause instanceof Error ? cause.message : "Microphone capture failed.";
 }
 
 export function useAudioCapture({ sampleRate, onPcmChunk }: AudioCaptureOpts) {
@@ -59,38 +73,43 @@ export function useAudioCapture({ sampleRate, onPcmChunk }: AudioCaptureOpts) {
         return;
       }
 
-      const context = new AudioContext({ sampleRate });
+      const context = new AudioContext();
       capture.context = context;
-      if (context.sampleRate !== sampleRate) {
-        throw new Error("This browser could not provide the audio sample rate required by the model.");
-      }
-      const source = context.createMediaStreamSource(stream);
-      const processor = context.createScriptProcessor(4096, 1, 1);
-      capture.processor = processor;
+      await context.audioWorklet.addModule(`${import.meta.env.BASE_URL}microphone-processor.js`);
+      if (captureRef.current !== capture) return;
 
-      processor.onaudioprocess = (event) => {
-        if (captureRef.current !== capture) return;
-        const input = event.inputBuffer.getChannelData(0);
-        const pcm = new ArrayBuffer(input.length * 2);
-        const view = new DataView(pcm);
-        for (let i = 0; i < input.length; i++) {
-          const sample = Math.max(-1, Math.min(1, input[i]));
-          view.setInt16(i * 2, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
-        }
-        onPcmChunk(pcm);
+      const source = context.createMediaStreamSource(stream);
+      const processor = new AudioWorkletNode(context, "sonicaid-microphone", {
+        channelCount: 1,
+        channelCountMode: "explicit",
+        processorOptions: { sampleRate },
+      });
+      capture.processor = processor;
+      processor.port.onmessage = ({ data }: MessageEvent<ArrayBuffer>) => {
+        if (captureRef.current === capture) onPcmChunk(data);
       };
 
-      source.connect(processor);
+      if (context.sampleRate > sampleRate) {
+        // Attenuate frequencies above the model's Nyquist limit before decimation.
+        const lowpass = context.createBiquadFilter();
+        lowpass.type = "lowpass";
+        lowpass.frequency.value = sampleRate * 0.45;
+        lowpass.Q.value = Math.SQRT1_2;
+        source.connect(lowpass).connect(processor);
+      } else {
+        source.connect(processor);
+      }
+      // The worklet leaves its output silent, so microphone audio is never played back.
       processor.connect(context.destination);
+      await context.resume();
+      if (captureRef.current !== capture) return;
       setRunning(true);
       setStarting(false);
     } catch (cause) {
       if (captureRef.current === capture) {
         dispose();
         setStarting(false);
-        setError(cause instanceof DOMException && cause.name === "NotAllowedError"
-          ? "Microphone permission was denied. Allow access in your browser and try again."
-          : cause instanceof Error ? cause.message : "Microphone capture failed.");
+        setError(captureError(cause));
       }
     }
   }, [dispose, onPcmChunk, sampleRate]);

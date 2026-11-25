@@ -8,7 +8,7 @@ from urllib.request import urlopen
 from playwright.sync_api import expect, sync_playwright
 
 
-def test_microphone(frontend_url, mock_backend):
+def test_microphone(frontend_url, mock_backend, physical_mic=False):
     received_bytes = 0
 
     def route_stream(socket):
@@ -32,11 +32,15 @@ def test_microphone(frontend_url, mock_backend):
         socket.on_message(receive)
 
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(args=[
+        browser_args = [] if physical_mic else [
             "--use-fake-device-for-media-stream",
             "--use-fake-ui-for-media-stream",
-        ])
-        page = browser.new_page(viewport={"width": 390, "height": 844})
+        ]
+        browser = playwright.chromium.launch(args=browser_args, headless=not physical_mic)
+        page = browser.new_page(
+            viewport={"width": 390, "height": 844},
+            permissions=["microphone"],
+        )
         if mock_backend:
             page.route_web_socket("**/ws/stream", route_stream)
         page.goto(frontend_url)
@@ -82,8 +86,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--frontend", default="http://127.0.0.1:5173")
     parser.add_argument("--mock-backend", action="store_true")
+    parser.add_argument("--physical-mic", action="store_true", help="Use the host input device")
     args = parser.parse_args()
     with urlopen(args.frontend, timeout=10):
         pass
-    test_microphone(args.frontend, args.mock_backend)
+    test_microphone(args.frontend, args.mock_backend, args.physical_mic)
     print("SonicAid microphone browser checks passed.")
