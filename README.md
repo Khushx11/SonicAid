@@ -60,13 +60,11 @@ Each point is a separate test fold. The dashed line is pooled accuracy across al
 
 ## Quick demo
 
-[**Watch the 80-second captioned demo**](https://raw.githubusercontent.com/Khushx11/SonicAid/main/docs/demo/walkthrough.mp4)
+Start capture, inspect the ESC-10 prediction and session timeline, then stop. The recording uses Chromium’s simulated microphone with the published ESC-10 checkpoint.
 
-The local dashboard uses the published ESC-10 checkpoint with a synthetic microphone source. The clip shows how an unfamiliar sound can still receive a known label.
+[Watch the 25-second captioned walkthrough](https://raw.githubusercontent.com/Khushx11/SonicAid/main/docs/demo/walkthrough.mp4)
 
-[![Dashboard preview](docs/demo/preview.png)](https://raw.githubusercontent.com/Khushx11/SonicAid/main/docs/demo/walkthrough.mp4)
-
-> The dashboard now includes live capture status, a waveform and spectrogram, the latest model score, and a session timeline with CSV export. The recording and preview above show an earlier dashboard layout.
+[![SonicAid recording session with waveform, spectrogram and ESC-10 scores](docs/demo/preview.png)](https://raw.githubusercontent.com/Khushx11/SonicAid/main/docs/demo/walkthrough.mp4)
 
 ## My contribution
 
