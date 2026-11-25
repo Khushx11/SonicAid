@@ -10,7 +10,7 @@ def create_app() -> FastAPI:
     configure_logging(settings.app.log_level)
 
     app = FastAPI(
-        title="SonicAid Next-Gen",
+        title="SonicAid",
         version="0.1.0",
     )
 

@@ -126,7 +126,7 @@ export default function App() {
             Published paper ↗
           </a>
         </span>
-        <span>Khush Maru · Adelaide University MAAIM · MIT License</span>
+        <span>Khush Bhavin Maru · Adelaide University MAAIM · MIT License</span>
       </footer>
     </div>
   );
