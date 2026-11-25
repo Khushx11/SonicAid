@@ -2,6 +2,8 @@
 
 Portfolio by [Khush Bhavin Maru](https://github.com/Khushx11) · Adelaide University MAAIM.
 
+**Project timeline:** Undergraduate research published in **2025**. Extended in **2026** with ESC-10 environmental sound classification, a live microphone dashboard and reproducible benchmarks.
+
 SonicAid classifies five-second environmental sound windows from a WebSocket audio stream. The FastAPI backend serves a checkpoint trained on ESC-10, and the React frontend displays predictions for local exploration. The repository also preserves an earlier synthetic-data scaffold for sensory-therapy research.
 
 > **Scope:** environmental sound classification research, not a diagnostic, clinical or therapy-evaluation system. ESC-10 contains no patient outcomes, engagement scores or emotion labels. A separate older multi-task training scaffold uses synthetic data and must not be confused with the ESC-10 results.
