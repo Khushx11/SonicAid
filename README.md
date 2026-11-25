@@ -30,6 +30,14 @@ These are paper-reported classification results. The current repository's ESC-10
 - **A live browser-to-model workflow.** A React dashboard streams microphone audio to FastAPI over WebSocket, where the model classifies five-second windows. The browser integration test checks prediction delivery, microphone cleanup and permission-denied feedback. [Live demo](#quick-demo) · [Tests](#testing)
 - **Repeatable model builds and broader evaluation.** The published checkpoint has a SHA-256 digest and an automated download-and-inference check. The repository also includes separate evaluation pipelines for ESC-50 and UrbanSound8K with source-overlap checks. The dashboard continues to use ESC-10. [Checkpoint release](https://github.com/Khushx11/SonicAid/releases/tag/esc10-baseline) · [Expanded benchmarks](#expanded-environmental-audio-benchmarks)
 
+### Which audio task does each result describe?
+
+| Where to look | Audio task | How to interpret the result |
+| --- | --- | --- |
+| [2025 publication](#original-publication) | Speech versus music using LibriSpeech and GTZAN | Paper-reported binary classification results |
+| [Live dashboard](#quick-demo) and [ESC-10 model card](docs/esc10_model_card.md) | Ten environmental sound classes | Held-out fold scores for the model family used by the dashboard |
+| [Expanded benchmarks](#expanded-environmental-audio-benchmarks) | ESC-50 and UrbanSound8K | Separate offline experiments with their own classes and splits |
+
 ## Listen to the live stream
 
 ```mermaid
@@ -44,9 +52,9 @@ sequenceDiagram
     API-->>Mic: Update the live dashboard
 ```
 
-![ESC-10 official-fold accuracy range, with pooled accuracy marked](docs/readme-benchmark.svg)
+![Held-out ESC-10 fold accuracies of 71.25%, 82.50%, 77.50%, 87.50% and 81.25%, with 80.00% pooled accuracy as a dashed reference](docs/readme-benchmark.svg)
 
-The line spans the lowest and highest fold accuracy. The diamond marks the pooled score across 400 recordings. The released checkpoint was subsequently fit on all five folds.
+Each point is a separate test fold. The dashed line is pooled accuracy across all 400 out-of-fold predictions. The released checkpoint was then fitted on all 400 recordings. [Fold results and protocol](docs/esc10_model_card.md#evaluation-protocol)
 
 ## Quick demo
 
