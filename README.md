@@ -35,7 +35,7 @@ HTTP requests and browser WebSockets permit only the default local development o
 
 ### Frontend
 
-In a second terminal:
+Use Node.js 22.12 or newer within the Node.js 22 release line. In a second terminal:
 
 ```bash
 cd frontend
@@ -109,7 +109,7 @@ The WebSocket endpoint `ws://localhost:8000/ws/stream` accepts binary 16 kHz mon
 pytest backend/tests
 ```
 
-The GitHub Actions workflow builds the React app, runs backend regression tests and verifies that the installer can download the published checkpoint and serve a prediction over WebSocket. The latter uses a synthetic tone to check the integration path. Check the latest CI run for the actual status.
+The GitHub Actions workflow builds the React app, runs backend regression tests and verifies that the installer can download the published checkpoint and serve a prediction over WebSocket. The WebSocket smoke test feeds a synthetic tone to the model. A separate Chromium check captures simulated microphone audio in the dashboard, verifies that the published checkpoint returns a result, and checks microphone cleanup and permission-denied feedback. These tests cover the browser-to-model integration. Physical microphone behaviour depends on the browser, permissions and device.
 
 ## Limitations and next steps
 

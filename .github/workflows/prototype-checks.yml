@@ -21,6 +21,10 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Install frontend dependencies
         run: npm ci --prefix frontend
+      - name: Audit frontend dependencies
+        run: npm audit --prefix frontend --audit-level=high
+      - name: Check frontend types
+        run: npm run typecheck --prefix frontend
       - name: Compile frontend
         run: npm run build --prefix frontend
 
@@ -66,3 +70,27 @@ jobs:
                   assert prediction["emotion"] is None
                   assert prediction["engagement_score"] is None
           PY
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Build the dashboard for the browser integration check
+        run: |
+          npm ci --prefix frontend
+          npm run build --prefix frontend
+          python -m pip install playwright==1.65.2
+          python -m playwright install --with-deps chromium
+      - name: Stream browser microphone audio to the published checkpoint
+        env:
+          SONICAID_ESC10_MODEL: ${{ runner.temp }}/esc10.joblib
+        run: |
+          python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 &
+          backend_pid=$!
+          npm run preview --prefix frontend -- --host 127.0.0.1 --port 5173 --strictPort &
+          frontend_pid=$!
+          trap 'kill "$backend_pid" "$frontend_pid" 2>/dev/null || true' EXIT
+          curl --silent --show-error --fail --retry 30 --retry-connrefused --retry-delay 1 http://127.0.0.1:8000/api/health
+          curl --silent --show-error --fail --retry 30 --retry-connrefused --retry-delay 1 http://127.0.0.1:5173/ > /dev/null
+          python frontend/tests/microphone_smoke.py
