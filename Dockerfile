@@ -8,7 +8,6 @@ RUN pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu 
 
 COPY backend ./backend
 COPY ml ./ml
-COPY configs ./configs
 COPY scripts ./scripts
 
 ENV PYTHONPATH=/app
