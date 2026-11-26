@@ -60,7 +60,7 @@ Each point is a separate test fold. The dashed line is pooled accuracy across al
 
 ## Quick demo
 
-Start capture, inspect the ESC-10 prediction and session timeline, then stop. The recording uses Chromium’s simulated microphone with the published ESC-10 checkpoint.
+Start capture, inspect the ESC-10 prediction and session timeline, then stop. The video is silent and captioned. The live app receives Chromium’s simulated microphone input and classifies it using the published ESC-10 checkpoint.
 
 [Watch the 25-second captioned walkthrough](https://raw.githubusercontent.com/Khushx11/SonicAid/main/docs/demo/walkthrough.mp4)
 
